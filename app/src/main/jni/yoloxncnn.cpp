@@ -85,9 +85,9 @@ static int draw_fps(cv::Mat& rgb)
             return 0;
         }
 
-        for (int i = 0; i < 10; i++)
+        for (float i : fps_history)
         {
-            avg_fps += fps_history[i];
+            avg_fps += i;
         }
         avg_fps /= 10.f;
     }
@@ -110,7 +110,7 @@ static int draw_fps(cv::Mat& rgb)
     return 0;
 }
 
-static Yolox* g_yolox = 0;
+static Yolox* g_yolox = nullptr;
 static ncnn::Mutex lock;
 
 class MyNdkCamera : public NdkCameraWindow
@@ -130,7 +130,7 @@ void MyNdkCamera::on_image_render(cv::Mat& rgb) const
             std::vector<Object> objects;
             g_yolox->detect(rgb, objects);
 
-            g_yolox->draw(rgb, objects);
+            Yolox::draw(rgb, objects);
         }
         else
         {
@@ -141,7 +141,7 @@ void MyNdkCamera::on_image_render(cv::Mat& rgb) const
     draw_fps(rgb);
 }
 
-static MyNdkCamera* g_camera = 0;
+static MyNdkCamera* g_camera = nullptr;
 
 extern "C" {
 
@@ -162,11 +162,11 @@ JNIEXPORT void JNI_OnUnload(JavaVM* vm, void* reserved)
         ncnn::MutexLockGuard g(lock);
 
         delete g_yolox;
-        g_yolox = 0;
+        g_yolox = nullptr;
     }
 
     delete g_camera;
-    g_camera = 0;
+    g_camera = nullptr;
 }
 
 // public native boolean loadModel(AssetManager mgr, int modelid, int cpugpu);
@@ -217,7 +217,7 @@ JNIEXPORT jboolean JNICALL Java_com_tencent_ncnnyolox_NcnnYolox_loadModel(JNIEnv
         {
             // no gpu
             delete g_yolox;
-            g_yolox = 0;
+            g_yolox = nullptr;
         }
         else
         {

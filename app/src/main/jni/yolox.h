@@ -39,19 +39,19 @@ public:
 
     int detect(const cv::Mat& rgb, std::vector<Object>& objects, float prob_threshold = 0.45f, float nms_threshold = 0.65f);
 
-    int draw(cv::Mat& rgb, const std::vector<Object>& objects);
+    static int draw(cv::Mat& rgb, const std::vector<Object>& objects);
 
 private:
 
     ncnn::Net yolox;
 
-    int target_size;
-    float mean_vals[3];
-    float norm_vals[3];
-    int image_w;
-    int image_h;
-    int in_w;
-    int in_h;
+    int target_size{};
+    float mean_vals[3]{};
+    float norm_vals[3]{};
+    int image_w{};
+    int image_h{};
+    int in_w{};
+    int in_h{};
 
     ncnn::UnlockedPoolAllocator blob_pool_allocator;
     ncnn::PoolAllocator workspace_pool_allocator;

@@ -36,7 +36,7 @@ static void onImageAvailable(void* context, AImageReader* reader)
 {
 //     __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "onImageAvailable %p", reader);
 
-    AImage* image = 0;
+    AImage* image = nullptr;
     media_status_t status = AImageReader_acquireLatestImage(reader, &image);
 
     if (status != AMEDIA_OK)
@@ -69,9 +69,9 @@ static void onImageAvailable(void* context, AImageReader* reader)
     AImage_getPlaneRowStride(image, 1, &u_rowStride);
     AImage_getPlaneRowStride(image, 2, &v_rowStride);
 
-    uint8_t* y_data = 0;
-    uint8_t* u_data = 0;
-    uint8_t* v_data = 0;
+    uint8_t* y_data = nullptr;
+    uint8_t* u_data = nullptr;
+    uint8_t* v_data = nullptr;
     int y_len = 0;
     int u_len = 0;
     int v_len = 0;
@@ -87,7 +87,7 @@ static void onImageAvailable(void* context, AImageReader* reader)
     else
     {
         // construct nv21
-        unsigned char* nv21 = new unsigned char[width * height + width * height / 2];
+        auto* nv21 = new unsigned char[width * height + width * height / 2];
         {
             // Y
             unsigned char* yptr = nv21;
@@ -149,7 +149,7 @@ void onCaptureFailed(void* context, ACameraCaptureSession* session, ACaptureRequ
 
 void onCaptureSequenceCompleted(void* context, ACameraCaptureSession* session, int sequenceId, int64_t frameNumber)
 {
-    __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "onCaptureSequenceCompleted %p %d %ld", session, sequenceId, frameNumber);
+    __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "onCaptureSequenceCompleted %p %d %lld", session, sequenceId, frameNumber);
 }
 
 void onCaptureSequenceAborted(void* context, ACameraCaptureSession* session, int sequenceId)
@@ -167,15 +167,15 @@ NdkCamera::NdkCamera()
     camera_facing = 0;
     camera_orientation = 0;
 
-    camera_manager = 0;
-    camera_device = 0;
-    image_reader = 0;
-    image_reader_surface = 0;
-    image_reader_target = 0;
-    capture_request = 0;
-    capture_session_output_container = 0;
-    capture_session_output = 0;
-    capture_session = 0;
+    camera_manager = nullptr;
+    camera_device = nullptr;
+    image_reader = nullptr;
+    image_reader_surface = nullptr;
+    image_reader_target = nullptr;
+    capture_request = nullptr;
+    capture_session_output_container = nullptr;
+    capture_session_output = nullptr;
+    capture_session = nullptr;
 
 
     // setup imagereader and its surface
@@ -201,13 +201,13 @@ NdkCamera::~NdkCamera()
     if (image_reader)
     {
         AImageReader_delete(image_reader);
-        image_reader = 0;
+        image_reader = nullptr;
     }
 
     if (image_reader_surface)
     {
         ANativeWindow_release(image_reader_surface);
-        image_reader_surface = 0;
+        image_reader_surface = nullptr;
     }
 }
 
@@ -222,16 +222,16 @@ int NdkCamera::open(int _camera_facing)
     // find front camera
     std::string camera_id;
     {
-        ACameraIdList* camera_id_list = 0;
+        ACameraIdList* camera_id_list = nullptr;
         ACameraManager_getCameraIdList(camera_manager, &camera_id_list);
 
         for (int i = 0; i < camera_id_list->numCameras; ++i)
         {
             const char* id = camera_id_list->cameraIds[i];
-            ACameraMetadata* camera_metadata = 0;
+            ACameraMetadata* camera_metadata = nullptr;
             ACameraManager_getCameraCharacteristics(camera_manager, id, &camera_metadata);
 
-            // query faceing
+            // query facing
             acamera_metadata_enum_android_lens_facing_t facing = ACAMERA_LENS_FACING_FRONT;
             {
                 ACameraMetadata_const_entry e = { 0 };
@@ -310,13 +310,13 @@ int NdkCamera::open(int _camera_facing)
 
         ACameraCaptureSession_captureCallbacks camera_capture_session_capture_callbacks;
         camera_capture_session_capture_callbacks.context = this;
-        camera_capture_session_capture_callbacks.onCaptureStarted = 0;
-        camera_capture_session_capture_callbacks.onCaptureProgressed = 0;
+        camera_capture_session_capture_callbacks.onCaptureStarted = nullptr;
+        camera_capture_session_capture_callbacks.onCaptureProgressed = nullptr;
         camera_capture_session_capture_callbacks.onCaptureCompleted = onCaptureCompleted;
         camera_capture_session_capture_callbacks.onCaptureFailed = onCaptureFailed;
         camera_capture_session_capture_callbacks.onCaptureSequenceCompleted = onCaptureSequenceCompleted;
         camera_capture_session_capture_callbacks.onCaptureSequenceAborted = onCaptureSequenceAborted;
-        camera_capture_session_capture_callbacks.onCaptureBufferLost = 0;
+        camera_capture_session_capture_callbacks.onCaptureBufferLost = nullptr;
 
         ACameraCaptureSession_setRepeatingRequest(capture_session, &camera_capture_session_capture_callbacks, 1, &capture_request, nullptr);
     }
@@ -332,43 +332,43 @@ void NdkCamera::close()
     {
         ACameraCaptureSession_stopRepeating(capture_session);
         ACameraCaptureSession_close(capture_session);
-        capture_session = 0;
+        capture_session = nullptr;
     }
 
     if (camera_device)
     {
         ACameraDevice_close(camera_device);
-        camera_device = 0;
+        camera_device = nullptr;
     }
 
     if (capture_session_output_container)
     {
         ACaptureSessionOutputContainer_free(capture_session_output_container);
-        capture_session_output_container = 0;
+        capture_session_output_container = nullptr;
     }
 
     if (capture_session_output)
     {
         ACaptureSessionOutput_free(capture_session_output);
-        capture_session_output = 0;
+        capture_session_output = nullptr;
     }
 
     if (capture_request)
     {
         ACaptureRequest_free(capture_request);
-        capture_request = 0;
+        capture_request = nullptr;
     }
 
     if (image_reader_target)
     {
         ACameraOutputTarget_free(image_reader_target);
-        image_reader_target = 0;
+        image_reader_target = nullptr;
     }
 
     if (camera_manager)
     {
         ACameraManager_delete(camera_manager);
-        camera_manager = 0;
+        camera_manager = nullptr;
     }
 }
 
@@ -423,10 +423,10 @@ static const int NDKCAMERAWINDOW_ID = 233;
 
 NdkCameraWindow::NdkCameraWindow() : NdkCamera()
 {
-    sensor_manager = 0;
-    sensor_event_queue = 0;
-    accelerometer_sensor = 0;
-    win = 0;
+    sensor_manager = nullptr;
+    sensor_event_queue = nullptr;
+    accelerometer_sensor = nullptr;
+    win = nullptr;
 
     accelerometer_orientation = 0;
 
@@ -441,13 +441,13 @@ NdkCameraWindow::~NdkCameraWindow()
     if (accelerometer_sensor)
     {
         ASensorEventQueue_disableSensor(sensor_event_queue, accelerometer_sensor);
-        accelerometer_sensor = 0;
+        accelerometer_sensor = nullptr;
     }
 
     if (sensor_event_queue)
     {
         ASensorManager_destroyEventQueue(sensor_manager, sensor_event_queue);
-        sensor_event_queue = 0;
+        sensor_event_queue = nullptr;
     }
 
     if (win)
@@ -477,12 +477,12 @@ void NdkCameraWindow::on_image(const unsigned char* nv21, int nv21_width, int nv
     {
         if (!sensor_event_queue)
         {
-            sensor_event_queue = ASensorManager_createEventQueue(sensor_manager, ALooper_prepare(ALOOPER_PREPARE_ALLOW_NON_CALLBACKS), NDKCAMERAWINDOW_ID, 0, 0);
+            sensor_event_queue = ASensorManager_createEventQueue(sensor_manager, ALooper_prepare(ALOOPER_PREPARE_ALLOW_NON_CALLBACKS), NDKCAMERAWINDOW_ID, nullptr, nullptr);
 
             ASensorEventQueue_enableSensor(sensor_event_queue, accelerometer_sensor);
         }
 
-        int id = ALooper_pollAll(0, 0, 0, 0);
+        int id = ALooper_pollAll(0, nullptr, nullptr, nullptr);
         if (id == NDKCAMERAWINDOW_ID)
         {
             ASensorEvent e[8];
@@ -728,14 +728,14 @@ void NdkCameraWindow::on_image(const unsigned char* nv21, int nv21_width, int nv
     ANativeWindow_setBuffersGeometry(win, render_w, render_h, AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM);
 
     ANativeWindow_Buffer buf;
-    ANativeWindow_lock(win, &buf, NULL);
+    ANativeWindow_lock(win, &buf, nullptr);
 
     // scale to target size
     if (buf.format == AHARDWAREBUFFER_FORMAT_R8G8B8A8_UNORM || buf.format == AHARDWAREBUFFER_FORMAT_R8G8B8X8_UNORM)
     {
         for (int y = 0; y < render_h; y++)
         {
-            const unsigned char* ptr = rgb_render.ptr<const unsigned char>(y);
+            const auto* ptr = rgb_render.ptr<const unsigned char>(y);
             unsigned char* outptr = (unsigned char*)buf.bits + buf.stride * 4 * y;
 
             int x = 0;

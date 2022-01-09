@@ -9,11 +9,15 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content">
 
-    <Button
-        android:id="@+id/buttonSwitchCamera"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="切换摄像头" />
+        <Button
+            android:id="@+id/buttonSwitchCamera"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:maxLines="1"
+            android:singleLine="true"
+            android:text="@string/buttonSwitchCameraText"
+            android:textAlignment="center"
+            android:textSize="34sp" />
 
     </LinearLayout>
 

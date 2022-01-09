@@ -146,13 +146,13 @@ static void nms_sorted_bboxes(const std::vector<Object>& faceobjects, std::vecto
         const Object& a = faceobjects[i];
 
         int keep = 1;
-        for (int j = 0; j < (int)picked.size(); j++)
+        for (int j : picked)
         {
-            const Object& b = faceobjects[picked[j]];
+            const Object& b = faceobjects[j];
 
             // intersection over union
             float inter_area = intersection_area(a, b);
-            float union_area = areas[i] + areas[picked[j]] - inter_area;
+            float union_area = areas[i] + areas[j] - inter_area;
             // float IoU = inter_area / union_area
             if (inter_area / union_area > nms_threshold)
                 keep = 0;
@@ -351,6 +351,7 @@ int Yolox::detect(const cv::Mat& rgb, std::vector<Object>& objects, float prob_t
     ncnn::copy_make_border(in, in_pad, 0, hpad, 0, wpad, ncnn::BORDER_CONSTANT, 114.f);
 
     // so for 0-255 input image, rgb_mean should multiply 255 and norm should div by std.
+    // new release of yolox has deleted this preprocess,if you are using new release please don't use this preprocess.
     in_pad.substract_mean_normalize(mean_vals, norm_vals);
 
     ncnn::Extractor ex = yolox.create_extractor();
@@ -441,10 +442,8 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
 
     int color_index = 0;
 
-    for (size_t i = 0; i < objects.size(); i++)
+    for (const auto & obj : objects)
     {
-        const Object& obj = objects[i];
-
         const unsigned char* color = colors[color_index % 19];
         color_index++;
 
