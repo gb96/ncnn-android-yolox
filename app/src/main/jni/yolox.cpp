@@ -187,7 +187,7 @@ static int generate_grids_and_stride(const int target_size, std::vector<int>& st
 static void generate_yolox_proposals(std::vector<GridAndStride> grid_strides, const ncnn::Mat& feat_blob, float prob_threshold, std::vector<Object>& objects)
 {
     const int num_grid = feat_blob.h;
-    fprintf(stderr, "output height: %d, width: %d, channels: %d, dims:%d\n", feat_blob.h, feat_blob.w, feat_blob.c, feat_blob.dims);
+    // fprintf(stderr, "output height: %d, width: %d, channels: %d, dims:%d\n", feat_blob.h, feat_blob.w, feat_blob.c, feat_blob.dims);
 
     const int num_class = feat_blob.w - 5;
 

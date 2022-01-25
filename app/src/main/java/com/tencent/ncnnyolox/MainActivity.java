@@ -34,7 +34,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback
     public static final int REQUEST_CAMERA = 100;
 
     private final NcnnYolox ncnnyolox = new NcnnYolox();
-    private int facing = 0;
+    private int facing = 1;
 
     private int current_model = 0;
     private int current_cpugpu = 0;
