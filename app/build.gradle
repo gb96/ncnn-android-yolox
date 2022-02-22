@@ -10,7 +10,7 @@ android {
 
         minSdkVersion 24
     }
-l
+
     externalNativeBuild {
         cmake {
             path file('src/main/jni/CMakeLists.txt')

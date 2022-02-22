@@ -4,6 +4,7 @@
     <string name="buttonSwitchCameraText">&#8635;</string>
     <string-array name="model_array">
         <item>yolox-nano</item>
+        <item>yolox-nano-Udacity</item>
         <item>yolox-tiny</item>
     </string-array>
     <string-array name="cpugpu_array">
