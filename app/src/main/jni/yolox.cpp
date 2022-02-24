@@ -247,9 +247,6 @@ int Yolox::load(const char* modeltype, int _target_size, const float* _mean_vals
     blob_pool_allocator.clear();
     workspace_pool_allocator.clear();
 
-    ncnn::set_cpu_powersave(2);
-    ncnn::set_omp_num_threads(ncnn::get_big_cpu_count());
-
     yolox.opt = ncnn::Option();
 
 #if NCNN_VULKAN
@@ -259,6 +256,9 @@ int Yolox::load(const char* modeltype, int _target_size, const float* _mean_vals
     yolox.opt.num_threads = ncnn::get_big_cpu_count();
     yolox.opt.blob_allocator = &blob_pool_allocator;
     yolox.opt.workspace_allocator = &workspace_pool_allocator;
+
+    ncnn::set_cpu_powersave(2);
+    ncnn::set_omp_num_threads(yolox.opt.num_threads);
 
     char parampath[256];
     char modelpath[256];
@@ -285,9 +285,6 @@ int Yolox::load(AAssetManager* mgr, const char* modeltype, int _target_size, con
     blob_pool_allocator.clear();
     workspace_pool_allocator.clear();
 
-    ncnn::set_cpu_powersave(2);
-    ncnn::set_omp_num_threads(ncnn::get_big_cpu_count());
-
     yolox.opt = ncnn::Option();
 #if NCNN_VULKAN
     yolox.opt.use_vulkan_compute = use_gpu;
@@ -296,6 +293,9 @@ int Yolox::load(AAssetManager* mgr, const char* modeltype, int _target_size, con
     yolox.opt.num_threads = ncnn::get_big_cpu_count();
     yolox.opt.blob_allocator = &blob_pool_allocator;
     yolox.opt.workspace_allocator = &workspace_pool_allocator;
+
+    ncnn::set_cpu_powersave(2);
+    ncnn::set_omp_num_threads(yolox.opt.num_threads);
 
     char parampath[256];
     char modelpath[256];
@@ -342,6 +342,7 @@ int Yolox::detect(const cv::Mat& rgb, std::vector<Object>& objects, float prob_t
     }
 
     ncnn::Mat in = ncnn::Mat::from_pixels_resize(rgb.data, ncnn::Mat::PIXEL_RGB, img_w, img_h, w, h);
+    // ncnn::Mat in = ncnn::Mat::from_pixels_resize(rgb.data, ncnn::Mat::PIXEL_RGB2BGR, img_w, img_h, w, h);
 
     // pad to target_size rectangle
     // yolov5/utils/datasets.py letterbox
@@ -383,6 +384,7 @@ int Yolox::detect(const cv::Mat& rgb, std::vector<Object>& objects, float prob_t
     for (int i = 0; i < count; i++)
     {
         objects[i] = proposals[picked[i]];
+        if (objects[i].label != 9) continue;
 
         // adjust offset to original unpadded
         float x0 = (objects[i].rect.x) / scale;
@@ -444,6 +446,7 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
 
     for (const auto & obj : objects)
     {
+        if (obj.label != 9) continue;
         const unsigned char* color = colors[color_index % 19];
         color_index++;
 
