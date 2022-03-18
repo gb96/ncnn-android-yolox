@@ -57,4 +57,4 @@ private:
     ncnn::PoolAllocator workspace_pool_allocator;
 };
 
-#endif // NANODET_H
+#endif // YOLOX_H

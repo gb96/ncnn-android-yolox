@@ -149,7 +149,7 @@ void onCaptureFailed(void* context, ACameraCaptureSession* session, ACaptureRequ
 
 void onCaptureSequenceCompleted(void* context, ACameraCaptureSession* session, int sequenceId, int64_t frameNumber)
 {
-    __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "onCaptureSequenceCompleted %p %d %lld", session, sequenceId, frameNumber);
+    __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "onCaptureSequenceCompleted %p %d %ld", session, sequenceId, frameNumber);
 }
 
 void onCaptureSequenceAborted(void* context, ACameraCaptureSession* session, int sequenceId)
@@ -166,6 +166,7 @@ NdkCamera::NdkCamera()
 {
     camera_facing = 0;
     camera_orientation = 0;
+    frame_count = 0;
 
     camera_manager = nullptr;
     camera_device = nullptr;
@@ -376,7 +377,7 @@ void NdkCamera::on_image(const cv::Mat& rgb) const
 {
 }
 
-void NdkCamera::on_image(const unsigned char* nv21, int nv21_width, int nv21_height) const
+void NdkCamera::on_image(const unsigned char* nv21, int nv21_width, int nv21_height)
 {
     // rotate nv21
     int w = 0;
@@ -417,6 +418,10 @@ void NdkCamera::on_image(const unsigned char* nv21, int nv21_width, int nv21_hei
     ncnn::yuv420sp2rgb(nv21_rotated.data, w, h, rgb.data);
 
     on_image(rgb);
+    if (frame_count%100 == 0) {
+        __android_log_print(ANDROID_LOG_DEBUG, "NdkCamera", "on_image %d w=%d h=%d", frame_count, w, h);
+    }
+    frame_count++;
 }
 
 static const int NDKCAMERAWINDOW_ID = 233;

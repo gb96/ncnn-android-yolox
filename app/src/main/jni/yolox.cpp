@@ -248,17 +248,16 @@ int Yolox::load(const char* modeltype, int _target_size, const float* _mean_vals
     workspace_pool_allocator.clear();
 
     yolox.opt = ncnn::Option();
+    yolox.opt.num_threads = ncnn::get_big_cpu_count();
+    ncnn::set_cpu_powersave(2);
+    ncnn::set_omp_num_threads(yolox.opt.num_threads);
 
 #if NCNN_VULKAN
     yolox.opt.use_vulkan_compute = use_gpu;
 #endif
     yolox.register_custom_layer("YoloV5Focus", YoloV5Focus_layer_creator);
-    yolox.opt.num_threads = ncnn::get_big_cpu_count();
     yolox.opt.blob_allocator = &blob_pool_allocator;
     yolox.opt.workspace_allocator = &workspace_pool_allocator;
-
-    ncnn::set_cpu_powersave(2);
-    ncnn::set_omp_num_threads(yolox.opt.num_threads);
 
     char parampath[256];
     char modelpath[256];
@@ -286,16 +285,16 @@ int Yolox::load(AAssetManager* mgr, const char* modeltype, int _target_size, con
     workspace_pool_allocator.clear();
 
     yolox.opt = ncnn::Option();
+    yolox.opt.num_threads = ncnn::get_big_cpu_count();
+    ncnn::set_cpu_powersave(2);
+    ncnn::set_omp_num_threads(yolox.opt.num_threads);
+
 #if NCNN_VULKAN
     yolox.opt.use_vulkan_compute = use_gpu;
 #endif
     yolox.register_custom_layer("YoloV5Focus", YoloV5Focus_layer_creator);
-    yolox.opt.num_threads = ncnn::get_big_cpu_count();
     yolox.opt.blob_allocator = &blob_pool_allocator;
     yolox.opt.workspace_allocator = &workspace_pool_allocator;
-
-    ncnn::set_cpu_powersave(2);
-    ncnn::set_omp_num_threads(yolox.opt.num_threads);
 
     char parampath[256];
     char modelpath[256];
@@ -474,7 +473,6 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
         cv::putText(rgb, text, cv::Point(x, y + label_size.height), cv::FONT_HERSHEY_SIMPLEX, 0.5, textcc, 1);
 
     }
-    
-    
+
     return 0;
 }

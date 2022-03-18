@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Yolox traffic lights</string>
+    <string name="app_name">traffic lights</string>
     <string name="buttonSwitchCameraText">&#8635;</string>
     <string-array name="model_array">
         <item>yolox-nano</item>

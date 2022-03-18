@@ -270,3 +270,69 @@ JNIEXPORT jboolean JNICALL Java_com_tencent_ncnnyolox_NcnnYolox_setOutputWindow(
 }
 
 }
+
+extern "C"
+JNIEXPORT jboolean JNICALL
+Java_com_hypearth_trafficlight_NcnnYolox_loadModel(JNIEnv *env, jobject thiz, jobject assetManager,
+                                                   jint modelid, jint cpugpu) {
+    if (modelid < 0 || modelid > 6 || cpugpu < 0 || cpugpu > 1)
+    {
+        return JNI_FALSE;
+    }
+
+    AAssetManager* mgr = AAssetManager_fromJava(env, assetManager);
+
+    __android_log_print(ANDROID_LOG_DEBUG, "ncnn", "loadModel %p", mgr);
+
+    const char* modeltypes[] =
+            {
+                    "yolox-nano",
+//        "yolox-nano_Udacity",
+//        "yolox-tiny",
+            };
+
+    const int target_sizes[] =
+            {
+                    416,
+//        416,
+//        416,
+            };
+
+    const float mean_vals[][3] =
+            {
+                    {255.f * 0.485f, 255.f * 0.456, 255.f * 0.406f},
+//        {255.f * 0.485f, 255.f * 0.456, 255.f * 0.406f},
+//        {255.f * 0.485f, 255.f * 0.456, 255.f * 0.406f},
+            };
+
+    const float norm_vals[][3] =
+            {
+                    {1 / (255.f * 0.229f), 1 / (255.f * 0.224f), 1 / (255.f * 0.225f)},
+//        {1 / (255.f * 0.229f), 1 / (255.f * 0.224f), 1 / (255.f * 0.225f)},
+//        {1 / (255.f * 0.229f), 1 / (255.f * 0.224f), 1 / (255.f * 0.225f)},
+            };
+
+    const char* modeltype = modeltypes[(int)modelid];
+    int target_size = target_sizes[(int)modelid];
+    bool use_gpu = (int)cpugpu == 1;
+
+    // reload
+    {
+        ncnn::MutexLockGuard g(lock);
+
+        if (use_gpu && ncnn::get_gpu_count() == 0)
+        {
+            // no gpu
+            delete g_yolox;
+            g_yolox = nullptr;
+        }
+        else
+        {
+            if (!g_yolox)
+                g_yolox = new Yolox;
+            g_yolox->load(mgr, modeltype, target_size, mean_vals[(int)modelid], norm_vals[(int)modelid], use_gpu);
+        }
+    }
+
+    return JNI_TRUE;
+}

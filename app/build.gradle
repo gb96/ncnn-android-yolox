@@ -1,11 +1,26 @@
 apply plugin: 'com.android.application'
 
 android {
+    signingConfigs {
+        default_apk {
+            storeFile file('C:/Users/gergb/.ssh/gpsAndroidApp.keystore')
+            storePassword 'L0diamond'
+            keyAlias 'hypearth.com'
+            keyPassword 'L0diamond'
+        }
+        gplay_upload {
+            storeFile file('C:/Users/gergb/.ssh/googlePlayUpload.keystore')
+            storePassword 'L0diamond'
+            keyAlias 'upload.hypearth.com'
+            keyPassword 'L0diamond'
+        }
+    }
     compileSdkVersion 31
-    buildToolsVersion "30.0.3"
+    buildToolsVersion "33.0.0 rc1"
+    ndkVersion "23.1.7779620"
 
     defaultConfig {
-        applicationId "com.tencent.ncnnyolox"
+        applicationId "com.hypearth.trafficlight"
         archivesBaseName = "$applicationId"
 
         minSdkVersion 24
@@ -19,5 +34,9 @@ android {
 
     dependencies {
         // implementation 'com.android.support:support-v4:28.0.0'
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
     }
 }
