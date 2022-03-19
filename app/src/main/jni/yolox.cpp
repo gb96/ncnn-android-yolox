@@ -84,24 +84,24 @@ static inline float intersection_area(const Object& a, const Object& b)
     return inter.area();
 }
 
-static void qsort_descent_inplace(std::vector<Object>& faceobjects, int left, int right)
+static void qsort_descent_inplace(std::vector<Object>& detectedobjs, int left, int right)
 {
     int i = left;
     int j = right;
-    float p = faceobjects[(left + right) / 2].prob;
+    float p = detectedobjs[(left + right) / 2].prob;
 
     while (i <= j)
     {
-        while (faceobjects[i].prob > p)
+        while (detectedobjs[i].prob > p)
             i++;
 
-        while (faceobjects[j].prob < p)
+        while (detectedobjs[j].prob < p)
             j--;
 
         if (i <= j)
         {
             // swap
-            std::swap(faceobjects[i], faceobjects[j]);
+            std::swap(detectedobjs[i], detectedobjs[j]);
 
             i++;
             j--;
@@ -112,11 +112,11 @@ static void qsort_descent_inplace(std::vector<Object>& faceobjects, int left, in
     {
         #pragma omp section
         {
-            if (left < j) qsort_descent_inplace(faceobjects, left, j);
+            if (left < j) qsort_descent_inplace(detectedobjs, left, j);
         }
         #pragma omp section
         {
-            if (i < right) qsort_descent_inplace(faceobjects, i, right);
+            if (i < right) qsort_descent_inplace(detectedobjs, i, right);
         }
     }
 }

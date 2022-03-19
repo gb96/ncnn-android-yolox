@@ -375,6 +375,9 @@ void NdkCamera::close()
 
 void NdkCamera::on_image(const cv::Mat& rgb) const
 {
+    if (frame_count%100 == 0) {
+        __android_log_print(ANDROID_LOG_DEBUG, "NdkCamera", "%d on_image(rgb)", frame_count);
+    }
 }
 
 void NdkCamera::on_image(const unsigned char* nv21, int nv21_width, int nv21_height)
@@ -419,7 +422,7 @@ void NdkCamera::on_image(const unsigned char* nv21, int nv21_width, int nv21_hei
 
     on_image(rgb);
     if (frame_count%100 == 0) {
-        __android_log_print(ANDROID_LOG_DEBUG, "NdkCamera", "on_image %d w=%d h=%d", frame_count, w, h);
+        __android_log_print(ANDROID_LOG_DEBUG, "NdkCamera", "%d on_image(nv21, w=%d, h=%d)", frame_count, w, h);
     }
     frame_count++;
 }
@@ -428,6 +431,7 @@ static const int NDKCAMERAWINDOW_ID = 233;
 
 NdkCameraWindow::NdkCameraWindow() : NdkCamera()
 {
+    __android_log_print(ANDROID_LOG_DEBUG, "NdkCameraWindow", "init()");
     sensor_manager = nullptr;
     sensor_event_queue = nullptr;
     accelerometer_sensor = nullptr;
@@ -443,6 +447,7 @@ NdkCameraWindow::NdkCameraWindow() : NdkCamera()
 
 NdkCameraWindow::~NdkCameraWindow()
 {
+    __android_log_print(ANDROID_LOG_WARN, "NdkCameraWindow", "destructor");
     if (accelerometer_sensor)
     {
         ASensorEventQueue_disableSensor(sensor_event_queue, accelerometer_sensor);
@@ -463,6 +468,9 @@ NdkCameraWindow::~NdkCameraWindow()
 
 void NdkCameraWindow::set_window(ANativeWindow* _win)
 {
+    if (frame_count%100 == 0) {
+        __android_log_print(ANDROID_LOG_DEBUG, "NdkCameraWindow", "%d set_window(_win)", frame_count);
+    }
     if (win)
     {
         ANativeWindow_release(win);
@@ -474,10 +482,16 @@ void NdkCameraWindow::set_window(ANativeWindow* _win)
 
 void NdkCameraWindow::on_image_render(cv::Mat& rgb) const
 {
+    if (frame_count%100 == 0) {
+        __android_log_print(ANDROID_LOG_DEBUG, "NdkCameraWindow", "%d on_image_render(rgb)", frame_count);
+    }
 }
 
 void NdkCameraWindow::on_image(const unsigned char* nv21, int nv21_width, int nv21_height) const
 {
+    if (frame_count%100 == 0) {
+        __android_log_print(ANDROID_LOG_DEBUG, "NdkCameraWindow", "%d on_image(nv21, nv21_width=%d, nv21_width=%d)", frame_count, nv21_width, nv21_width);
+    }
     // resolve orientation from camera_orientation and accelerometer_sensor
     {
         if (!sensor_event_queue)
