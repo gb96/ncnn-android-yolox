@@ -129,26 +129,26 @@ static void qsort_descent_inplace(std::vector<Object>& objects)
     qsort_descent_inplace(objects, 0, objects.size() - 1);
 }
 
-static void nms_sorted_bboxes(const std::vector<Object>& faceobjects, std::vector<int>& picked, float nms_threshold)
+static void nms_sorted_bboxes(const std::vector<Object>& detectedobjs, std::vector<int>& picked, float nms_threshold)
 {
     picked.clear();
 
-    const int n = faceobjects.size();
+    const int n = detectedobjs.size();
 
     std::vector<float> areas(n);
     for (int i = 0; i < n; i++)
     {
-        areas[i] = faceobjects[i].rect.area();
+        areas[i] = detectedobjs[i].rect.area();
     }
 
     for (int i = 0; i < n; i++)
     {
-        const Object& a = faceobjects[i];
+        const Object& a = detectedobjs[i];
 
         int keep = 1;
         for (int j : picked)
         {
-            const Object& b = faceobjects[j];
+            const Object& b = detectedobjs[j];
 
             // intersection over union
             float inter_area = intersection_area(a, b);
