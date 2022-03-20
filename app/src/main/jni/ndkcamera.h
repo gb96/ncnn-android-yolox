@@ -37,12 +37,12 @@ public:
 
     virtual void on_image(const cv::Mat& rgb) const;
 
-    virtual void on_image(const unsigned char* nv21, int nv21_width, int nv21_height);
+    virtual void on_image(const unsigned char* nv21, int nv21_width, int nv21_height) const;
 
 public:
     int camera_facing;
     int camera_orientation;
-    int frame_count;
+//    int frame_count;
 
 private:
     ACameraManager* camera_manager;

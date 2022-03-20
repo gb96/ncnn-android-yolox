@@ -166,7 +166,7 @@ NdkCamera::NdkCamera()
 {
     camera_facing = 0;
     camera_orientation = 0;
-    frame_count = 0;
+    // frame_count = 0;
 
     camera_manager = nullptr;
     camera_device = nullptr;
@@ -375,12 +375,12 @@ void NdkCamera::close()
 
 void NdkCamera::on_image(const cv::Mat& rgb) const
 {
-    if (frame_count%100 == 0) {
-        __android_log_print(ANDROID_LOG_DEBUG, "NdkCamera", "%d on_image(rgb)", frame_count);
-    }
+//    if (frame_count%100 == 0) {
+//        __android_log_print(ANDROID_LOG_DEBUG, "NdkCamera", "%d on_image(rgb)", frame_count);
+//    }
 }
 
-void NdkCamera::on_image(const unsigned char* nv21, int nv21_width, int nv21_height)
+void NdkCamera::on_image(const unsigned char* nv21, int nv21_width, int nv21_height) const
 {
     // rotate nv21
     int w = 0;
@@ -421,10 +421,10 @@ void NdkCamera::on_image(const unsigned char* nv21, int nv21_width, int nv21_hei
     ncnn::yuv420sp2rgb(nv21_rotated.data, w, h, rgb.data);
 
     on_image(rgb);
-    if (frame_count%100 == 0) {
-        __android_log_print(ANDROID_LOG_DEBUG, "NdkCamera", "%d on_image(nv21, w=%d, h=%d)", frame_count, w, h);
-    }
-    frame_count++;
+//    if (frame_count%100 == 0) {
+//        __android_log_print(ANDROID_LOG_DEBUG, "NdkCamera", "%d on_image(nv21, w=%d, h=%d)", frame_count, w, h);
+//    }
+//    frame_count++;
 }
 
 static const int NDKCAMERAWINDOW_ID = 233;
@@ -468,9 +468,7 @@ NdkCameraWindow::~NdkCameraWindow()
 
 void NdkCameraWindow::set_window(ANativeWindow* _win)
 {
-    if (frame_count%100 == 0) {
-        __android_log_print(ANDROID_LOG_DEBUG, "NdkCameraWindow", "%d set_window(_win)", frame_count);
-    }
+    __android_log_print(ANDROID_LOG_DEBUG, "NdkCameraWindow", "set_window(_win)");
     if (win)
     {
         ANativeWindow_release(win);
@@ -482,16 +480,16 @@ void NdkCameraWindow::set_window(ANativeWindow* _win)
 
 void NdkCameraWindow::on_image_render(cv::Mat& rgb) const
 {
-    if (frame_count%100 == 0) {
-        __android_log_print(ANDROID_LOG_DEBUG, "NdkCameraWindow", "%d on_image_render(rgb)", frame_count);
-    }
+//    if (frame_count%100 == 0) {
+//        __android_log_print(ANDROID_LOG_DEBUG, "NdkCameraWindow", "%d on_image_render(rgb)", frame_count);
+//    }
 }
 
 void NdkCameraWindow::on_image(const unsigned char* nv21, int nv21_width, int nv21_height) const
 {
-    if (frame_count%100 == 0) {
-        __android_log_print(ANDROID_LOG_DEBUG, "NdkCameraWindow", "%d on_image(nv21, nv21_width=%d, nv21_width=%d)", frame_count, nv21_width, nv21_width);
-    }
+//    if (frame_count%100 == 0) {
+//        __android_log_print(ANDROID_LOG_DEBUG, "NdkCameraWindow", "%d on_image(nv21, nv21_width=%d, nv21_width=%d)", frame_count, nv21_width, nv21_width);
+//    }
     // resolve orientation from camera_orientation and accelerometer_sensor
     {
         if (!sensor_event_queue)
