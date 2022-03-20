@@ -181,7 +181,12 @@ NdkCamera::NdkCamera()
 
     // setup imagereader and its surface
     {
-        AImageReader_new(640, 480, AIMAGE_FORMAT_YUV_420_888, /*maxImages*/2, &image_reader);
+        // AImageReader_new(640, 480, AIMAGE_FORMAT_YUV_420_888, /*maxImages*/2, &image_reader);
+//        AImageReader_new(800, 600, AIMAGE_FORMAT_YUV_420_888, /*maxImages*/2, &image_reader);
+//        AImageReader_new(1024, 768, AIMAGE_FORMAT_YUV_420_888, /*maxImages*/2, &image_reader);
+//        AImageReader_new(1280, 960, AIMAGE_FORMAT_YUV_420_888, /*maxImages*/2, &image_reader);
+//        AImageReader_new(1920, 1080, AIMAGE_FORMAT_YUV_420_888, /*maxImages*/2, &image_reader);
+        AImageReader_new(2560, 1440, AIMAGE_FORMAT_YUV_420_888, /*maxImages*/2, &image_reader);
 
         AImageReader_ImageListener listener;
         listener.context = this;
