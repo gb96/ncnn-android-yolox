@@ -408,17 +408,17 @@ int Yolox::detect(const cv::Mat& rgb, std::vector<Object>& objects, float prob_t
 
 int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
 {
-    static const char* class_names[] = {
-            "00 person", "01 bicycle", "02 car", "03 motorcycle", "04 airplane", "05 bus", "06 train", "07 truck", "08 boat", "09 traffic light",
-            "10 fire hydrant", "11 stop sign", "12 parking meter", "13 bench", "14 bird", "15 cat", "16 dog", "17 horse", "18 sheep", "19 cow",
-            "20 elephant", "21 bear", "22 zebra", "23 giraffe", "24 backpack", "25 umbrella", "26 handbag", "27 tie", "28 suitcase", "29 frisbee",
-            "30 skis", "31 snowboard", "32 sports ball", "33 kite", "34 baseball bat", "35 baseball glove", "36 skateboard", "37 surfboard",
-            "38 tennis racket", "39 bottle", "40 wine glass", "41 cup", "42 fork", "43 knife", "44 spoon", "45 bowl", "46 banana", "47 apple",
-            "48 sandwich", "49 orange", "50 broccoli", "51 carrot", "52 hot dog", "53 pizza", "54 donut", "55 cake", "56 chair", "57 couch",
-            "58 potted plant", "59 bed", "60 dining table", "61 toilet", "62 tv", "63 laptop", "64 mouse", "65 remote", "66 keyboard", "67 cell phone",
-            "68 microwave", "69 oven", "70 toaster", "71 sink", "72 refrigerator", "73 book", "74 clock", "75 vase", "76 scissors", "77 teddy bear",
-            "78 hair drier", "79 toothbrush"
-    };
+//    static const char* class_names[] = {
+//            "00 person", "01 bicycle", "02 car", "03 motorcycle", "04 airplane", "05 bus", "06 train", "07 truck", "08 boat", "09 traffic light",
+//            "10 fire hydrant", "11 stop sign", "12 parking meter", "13 bench", "14 bird", "15 cat", "16 dog", "17 horse", "18 sheep", "19 cow",
+//            "20 elephant", "21 bear", "22 zebra", "23 giraffe", "24 backpack", "25 umbrella", "26 handbag", "27 tie", "28 suitcase", "29 frisbee",
+//            "30 skis", "31 snowboard", "32 sports ball", "33 kite", "34 baseball bat", "35 baseball glove", "36 skateboard", "37 surfboard",
+//            "38 tennis racket", "39 bottle", "40 wine glass", "41 cup", "42 fork", "43 knife", "44 spoon", "45 bowl", "46 banana", "47 apple",
+//            "48 sandwich", "49 orange", "50 broccoli", "51 carrot", "52 hot dog", "53 pizza", "54 donut", "55 cake", "56 chair", "57 couch",
+//            "58 potted plant", "59 bed", "60 dining table", "61 toilet", "62 tv", "63 laptop", "64 mouse", "65 remote", "66 keyboard", "67 cell phone",
+//            "68 microwave", "69 oven", "70 toaster", "71 sink", "72 refrigerator", "73 book", "74 clock", "75 vase", "76 scissors", "77 teddy bear",
+//            "78 hair drier", "79 toothbrush"
+//    };
     static const unsigned char colors[19][3] = {
         { 54,  67, 244},
         { 99,  30, 233},
@@ -441,23 +441,39 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
         {139, 125,  96}
     };
 
-    int color_index = 0;
+    static const cv::Scalar cc_black = cv::Scalar(0, 0, 0);
+    static const cv::Scalar cc_white = cv::Scalar(255, 255, 255);
 
+    int color_index = 0;
+    float max_prob = 0.0;
     for (const auto & obj : objects)
     {
+        // display at most 3 detected traffic lights, the most probable 4 detections
+        if (color_index >= 3) break;
+
+        // only count and display traffic light detections
         if (obj.label != 9) continue;
+
+        // track maximum probability, should always be the first object due to sort
+        // max_prob = fmax(max_prob, obj.prob);
+        if (color_index == 0) {
+            max_prob = obj.prob;
+        }
         const unsigned char* color = colors[color_index % 19];
         color_index++;
 
         cv::Scalar cc(color[0], color[1], color[2]);
 
-        cv::rectangle(rgb,obj.rect, cc, 2);
+        cv::rectangle(rgb,obj.rect, cc, 4); // 1
 
-        char text[256];
-        sprintf(text, "%s %.1f%%", class_names[obj.label], obj.prob * 100);
+        // char text[256];
+        // sprintf(text, "%s %.0f%%", class_names[obj.label], obj.prob * 100);
+
+        char text[5];
+        sprintf(text, "%.0f%%", obj.prob * 100);
 
         int baseLine = 0;
-        cv::Size label_size = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseLine);
+        cv::Size label_size = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, 2, 2, &baseLine);
 
         int x = obj.rect.x;
         int y = obj.rect.y - label_size.height - baseLine;
@@ -468,11 +484,13 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
 
         cv::rectangle(rgb, cv::Rect(cv::Point(x, y), cv::Size(label_size.width, label_size.height + baseLine)), cc, -1);
 
-        cv::Scalar textcc = (color[0] + color[1] + color[2] >= 381) ? cv::Scalar(0, 0, 0) : cv::Scalar(255, 255, 255);
+        cv::Scalar textcc = (color[0] + color[1] + color[2] >= 381) ? cc_black : cc_white;
 
-        cv::putText(rgb, text, cv::Point(x, y + label_size.height), cv::FONT_HERSHEY_SIMPLEX, 0.5, textcc, 1);
-
+        cv::putText(rgb, text, cv::Point(x, y + label_size.height), cv::FONT_HERSHEY_SIMPLEX, 2, textcc, 2);
     }
+//    if (color_index > 0) {
+//        __android_log_print(ANDROID_LOG_INFO, "ncnn", "count=%d, max prob=%.0f%%", color_index, max_prob * 100);
+//    }
 
     return 0;
 }

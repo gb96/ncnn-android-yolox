@@ -96,7 +96,7 @@ static int draw_fps(cv::Mat& rgb)
     sprintf(text, "FPS=%.0f", avg_fps);
 
     int baseLine = 0;
-    cv::Size label_size = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, 0.5, 1, &baseLine);
+    cv::Size label_size = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, 2, 2, &baseLine);
 
     int y = 0;
     int x = rgb.cols - label_size.width;
@@ -105,7 +105,7 @@ static int draw_fps(cv::Mat& rgb)
                     cv::Scalar(255, 255, 255), -1);
 
     cv::putText(rgb, text, cv::Point(x, y + label_size.height),
-                cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0));
+                cv::FONT_HERSHEY_SIMPLEX, 2, cv::Scalar(0, 0, 0));
 
     return 0;
 }

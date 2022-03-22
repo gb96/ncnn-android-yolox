@@ -41,19 +41,20 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback
 
     /** Called when the activity is first created. */
     @Override
-    public void onCreate(Bundle savedInstanceState)
+    public void onCreate(final Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
 
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        // getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        SurfaceView cameraView = (SurfaceView) findViewById(R.id.cameraview);
+        final SurfaceView cameraView = (SurfaceView) findViewById(R.id.cameraview);
 
-        cameraView.getHolder().setFormat(PixelFormat.RGBA_8888);
-        cameraView.getHolder().addCallback(this);
+        final SurfaceHolder holder = cameraView.getHolder();
+        holder.setFormat(PixelFormat.RGBA_8888);
+        holder.addCallback(this);
 
-        Button buttonSwitchCamera = (Button) findViewById(R.id.buttonSwitchCamera);
+        final Button buttonSwitchCamera = (Button) findViewById(R.id.buttonSwitchCamera);
         buttonSwitchCamera.setOnClickListener(arg0 -> {
 
             int new_facing = 1 - facing;
@@ -65,7 +66,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback
             facing = new_facing;
         });
 
-        Spinner spinnerModel = (Spinner) findViewById(R.id.spinnerModel);
+        final Spinner spinnerModel = (Spinner) findViewById(R.id.spinnerModel);
         spinnerModel.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> arg0, View arg1, int position, long id)
@@ -83,7 +84,7 @@ public class MainActivity extends Activity implements SurfaceHolder.Callback
             }
         });
 
-        Spinner spinnerCPUGPU = (Spinner) findViewById(R.id.spinnerCPUGPU);
+        final Spinner spinnerCPUGPU = (Spinner) findViewById(R.id.spinnerCPUGPU);
         spinnerCPUGPU.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> arg0, View arg1, int position, long id)
