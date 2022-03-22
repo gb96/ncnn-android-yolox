@@ -28,7 +28,7 @@
 class NdkCamera
 {
 public:
-    NdkCamera();
+    NdkCamera(int camera_res_width, int camera_res_height);
     virtual ~NdkCamera();
 
     // facing 0=front 1=back
@@ -59,7 +59,7 @@ private:
 class NdkCameraWindow : public NdkCamera
 {
 public:
-    NdkCameraWindow();
+    NdkCameraWindow(int camera_res_width, int camera_res_height);
     virtual ~NdkCameraWindow();
 
     void set_window(ANativeWindow* win);

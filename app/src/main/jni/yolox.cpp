@@ -18,6 +18,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 #include "cpu.h"
+#include "cv_param.h"
 
 
 
@@ -172,11 +173,7 @@ static int generate_grids_and_stride(const int target_size, std::vector<int>& st
         {
             for (int g0 = 0; g0 < num_grid; g0++)
             {
-               // __android_log_print(ANDROID_LOG_DEBUG, "ncnn", "aaaaaaaaaaaaaa");
-
-
                 grid_strides.push_back((GridAndStride){g0, g1, stride});
-               // __android_log_print(ANDROID_LOG_DEBUG, "ncnn", "bbbbbbbbbbbbbbbbbbb");
             }
         }
     }
@@ -211,19 +208,27 @@ static void generate_yolox_proposals(std::vector<GridAndStride> grid_strides, co
         float y0 = y_center - h * 0.5f;
 
         float box_objectness = feat_ptr[4];
-        for (int class_idx = 0; class_idx < num_class; class_idx++)
+        // preference detections that are more central horizontally
+        float central_bias_x = 0.0f;
+
+        // for (int class_idx = 0; class_idx < num_class; class_idx++)
         {
+            // instead of checking detections for all classes,
+            // only look for a single target class
+            int class_idx = TARGET_OBJECT_CLASS_IDX;
+
             float box_cls_score = feat_ptr[5 + class_idx];
             float box_prob = box_objectness * box_cls_score;
             if (box_prob > prob_threshold)
             {
+                central_bias_x = 1.0f - abs(x_center - CAMERA_CENTER_Y) / CAMERA_RES_HEIGHT;
                 Object obj;
                 obj.rect.x = x0;
                 obj.rect.y = y0;
                 obj.rect.width = w;
                 obj.rect.height = h;
                 obj.label = class_idx;
-                obj.prob = box_prob;
+                obj.prob = box_prob * central_bias_x;
 
                 objects.push_back(obj);
             }
@@ -383,7 +388,7 @@ int Yolox::detect(const cv::Mat& rgb, std::vector<Object>& objects, float prob_t
     for (int i = 0; i < count; i++)
     {
         objects[i] = proposals[picked[i]];
-        if (objects[i].label != 9) continue;
+        if (objects[i].label != TARGET_OBJECT_CLASS_IDX) continue;
 
         // adjust offset to original unpadded
         float x0 = (objects[i].rect.x) / scale;
@@ -448,11 +453,12 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
     float max_prob = 0.0;
     for (const auto & obj : objects)
     {
-        // display at most 3 detected traffic lights, the most probable 4 detections
-        if (color_index >= 3) break;
+        // display at most TARGET_OBJECT_MAX_DETECT_COUNT detected traffic lights,
+        // the most probable detections
+        if (color_index >= TARGET_OBJECT_MAX_DETECT_COUNT) break;
 
         // only count and display traffic light detections
-        if (obj.label != 9) continue;
+        if (obj.label != TARGET_OBJECT_CLASS_IDX) continue;
 
         // track maximum probability, should always be the first object due to sort
         // max_prob = fmax(max_prob, obj.prob);

@@ -29,6 +29,7 @@
 #include "yolox.h"
 
 #include "ndkcamera.h"
+#include "cv_param.h"
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -116,6 +117,8 @@ static ncnn::Mutex lock;
 class MyNdkCamera : public NdkCameraWindow
 {
 public:
+    MyNdkCamera(int camera_res_width, int camera_res_height);
+
     virtual void on_image_render(cv::Mat& rgb) const;
 };
 
@@ -140,6 +143,10 @@ void MyNdkCamera::on_image_render(cv::Mat& rgb) const
     draw_fps(rgb);
 }
 
+MyNdkCamera::MyNdkCamera(int camera_res_width, int camera_res_height) : NdkCameraWindow(camera_res_width, camera_res_height) {
+    __android_log_print(ANDROID_LOG_DEBUG, "MyNdkCamera", "init(w=%d, h=%d)", camera_res_width, camera_res_height);
+}
+
 static MyNdkCamera* g_camera = nullptr;
 
 extern "C" {
@@ -148,7 +155,7 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved)
 {
     __android_log_print(ANDROID_LOG_DEBUG, "ncnn", "JNI_OnLoad");
 
-    g_camera = new MyNdkCamera;
+    g_camera = new MyNdkCamera(CAMERA_RES_WIDTH, CAMERA_RES_HEIGHT);
 
     return JNI_VERSION_1_4;
 }

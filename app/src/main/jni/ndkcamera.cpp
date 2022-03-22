@@ -162,7 +162,7 @@ void onCaptureCompleted(void* context, ACameraCaptureSession* session, ACaptureR
 //     __android_log_print(ANDROID_LOG_WARN, "NdkCamera", "onCaptureCompleted %p %p %p", session, request, result);
 }
 
-NdkCamera::NdkCamera()
+NdkCamera::NdkCamera(int camera_res_width, int camera_res_height)
 {
     camera_facing = 0;
     camera_orientation = 0;
@@ -179,14 +179,9 @@ NdkCamera::NdkCamera()
     capture_session = nullptr;
 
 
-    // setup imagereader and its surface
+    // setup ImageReader and its surface
     {
-        // AImageReader_new(640, 480, AIMAGE_FORMAT_YUV_420_888, /*maxImages*/2, &image_reader);
-//        AImageReader_new(800, 600, AIMAGE_FORMAT_YUV_420_888, /*maxImages*/2, &image_reader);
-//        AImageReader_new(1024, 768, AIMAGE_FORMAT_YUV_420_888, /*maxImages*/2, &image_reader);
-//        AImageReader_new(1280, 960, AIMAGE_FORMAT_YUV_420_888, /*maxImages*/2, &image_reader);
-//        AImageReader_new(1920, 1080, AIMAGE_FORMAT_YUV_420_888, /*maxImages*/2, &image_reader);
-        AImageReader_new(2560, 1440, AIMAGE_FORMAT_YUV_420_888, /*maxImages*/2, &image_reader);
+        AImageReader_new(camera_res_width, camera_res_height, AIMAGE_FORMAT_YUV_420_888, /*maxImages*/2, &image_reader);
 
         AImageReader_ImageListener listener;
         listener.context = this;
@@ -434,9 +429,9 @@ void NdkCamera::on_image(const unsigned char* nv21, int nv21_width, int nv21_hei
 
 static const int NDKCAMERAWINDOW_ID = 233;
 
-NdkCameraWindow::NdkCameraWindow() : NdkCamera()
+NdkCameraWindow::NdkCameraWindow(int camera_res_width, int camera_res_height) : NdkCamera(camera_res_width, camera_res_height)
 {
-    __android_log_print(ANDROID_LOG_DEBUG, "NdkCameraWindow", "init()");
+    __android_log_print(ANDROID_LOG_DEBUG, "NdkCameraWindow", "init(w=%d, h=%d)", camera_res_width, camera_res_height);
     sensor_manager = nullptr;
     sensor_event_queue = nullptr;
     accelerometer_sensor = nullptr;
