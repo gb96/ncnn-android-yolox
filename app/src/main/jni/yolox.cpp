@@ -234,7 +234,8 @@ static void generate_yolox_proposals(std::vector<GridAndStride> grid_strides, co
 
                 objects.push_back(obj);
 //                __android_log_print(ANDROID_LOG_INFO, "yolox", "detection %d/%d x: %.1f y: %.1f height: %.1f, width: %.1f, central_bias_x: %.1f, size_bias: %.1f, prob: %0.2f, channels: %d, dims:%d\n", anchor_idx, num_anchors, x_center, y_center, h, w, central_bias_x, size_bias, obj.prob, feat_blob.c, feat_blob.dims);
-                __android_log_print(ANDROID_LOG_INFO, "yolox", "detection %d/%d x: %.1f y: %.1f height: %.1f, width: %.1f, central_bias_x: %.1f, size_bias: %.1f, prob: %0.2f\n", anchor_idx, num_anchors, x_center, y_center, h, w, central_bias_x, size_bias, obj.prob);
+//                __android_log_print(ANDROID_LOG_INFO, "yolox", "detection %d/%d x: %.1f y: %.1f height: %.1f, width: %.1f, central_bias_x: %.1f, size_bias: %.1f, prob: %0.2f\n", anchor_idx, num_anchors, x_center, y_center, h, w, central_bias_x, size_bias, obj.prob);
+//                __android_log_print(ANDROID_LOG_INFO, "yolox", "detection %d/%d grid0: %d, central_bias_x: %.1f, size_bias: %.1f, prob: %0.2f\n", anchor_idx, num_anchors, grid0, central_bias_x, size_bias, obj.prob);
             }
 
         } // class loop

@@ -14,7 +14,7 @@
 #define CAMERA_CENTER_Y (0.5f * CAMERA_RES_HEIGHT)
 
 // Detections need to have probability above this threshold to make the cut
-#define DETECTION_THRESHOLD 0.15f
+#define DETECTION_THRESHOLD 0.04f
 
 #define NMS_THRESHOLD 0.50f
 
