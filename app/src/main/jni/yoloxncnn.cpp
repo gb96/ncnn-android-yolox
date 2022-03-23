@@ -130,7 +130,7 @@ void MyNdkCamera::on_image_render(cv::Mat& rgb) const
         if (g_yolox)
         {
             std::vector<Object> objects;
-            g_yolox->detect(rgb, objects);
+            g_yolox->detect(rgb, objects, DETECTION_THRESHOLD, NMS_THRESHOLD);
 
             Yolox::draw(rgb, objects);
         }

@@ -210,6 +210,7 @@ static void generate_yolox_proposals(std::vector<GridAndStride> grid_strides, co
         float box_objectness = feat_ptr[4];
         // preference detections that are more central horizontally
         float central_bias_x = 0.0f;
+        float size_bias = 0.0f;
 
         // for (int class_idx = 0; class_idx < num_class; class_idx++)
         {
@@ -222,15 +223,18 @@ static void generate_yolox_proposals(std::vector<GridAndStride> grid_strides, co
             if (box_prob > prob_threshold)
             {
                 central_bias_x = 1.0f - abs(x_center - CAMERA_CENTER_Y) / CAMERA_RES_HEIGHT;
+                size_bias = 0.02f * w;
                 Object obj;
                 obj.rect.x = x0;
                 obj.rect.y = y0;
                 obj.rect.width = w;
                 obj.rect.height = h;
                 obj.label = class_idx;
-                obj.prob = box_prob * central_bias_x;
+                obj.prob = box_prob * central_bias_x * size_bias;
 
                 objects.push_back(obj);
+//                __android_log_print(ANDROID_LOG_INFO, "yolox", "detection %d/%d x: %.1f y: %.1f height: %.1f, width: %.1f, central_bias_x: %.1f, size_bias: %.1f, prob: %0.2f, channels: %d, dims:%d\n", anchor_idx, num_anchors, x_center, y_center, h, w, central_bias_x, size_bias, obj.prob, feat_blob.c, feat_blob.dims);
+                __android_log_print(ANDROID_LOG_INFO, "yolox", "detection %d/%d x: %.1f y: %.1f height: %.1f, width: %.1f, central_bias_x: %.1f, size_bias: %.1f, prob: %0.2f\n", anchor_idx, num_anchors, x_center, y_center, h, w, central_bias_x, size_bias, obj.prob);
             }
 
         } // class loop

@@ -13,6 +13,11 @@
 #define CAMERA_CENTER_X (0.5f * CAMERA_RES_WIDTH)
 #define CAMERA_CENTER_Y (0.5f * CAMERA_RES_HEIGHT)
 
+// Detections need to have probability above this threshold to make the cut
+#define DETECTION_THRESHOLD 0.15f
+
+#define NMS_THRESHOLD 0.50f
+
 // Only interested in one target object class, this is the class index for that
 #define TARGET_OBJECT_CLASS_IDX 9
 
