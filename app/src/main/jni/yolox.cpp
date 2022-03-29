@@ -223,7 +223,7 @@ static void generate_yolox_proposals(std::vector<GridAndStride> grid_strides, co
             if (box_prob > prob_threshold)
             {
                 central_bias_x = 1.0f - abs(x_center - CAMERA_CENTER_Y) / CAMERA_RES_HEIGHT;
-                size_bias = 0.02f * w;
+                size_bias = 0.05f * w;
                 Object obj;
                 obj.rect.x = x0;
                 obj.rect.y = y0;
@@ -329,9 +329,14 @@ int Yolox::load(AAssetManager* mgr, const char* modeltype, int _target_size, con
 
 int Yolox::detect(const cv::Mat& rgb, std::vector<Object>& objects, float prob_threshold, float nms_threshold)
 {
+//    __android_log_print(ANDROID_LOG_INFO, "Yolox", "detect(rows=%d, cols=%d)", rgb.rows, rgb.cols);
+//    __android_log_print(ANDROID_LOG_INFO, "Yolox", "CROP_FACTOR=%d CROP_W=%d CROP_H=%d", CROP_FACTOR, CROP_W, CROP_H);
+
+//    cv::Mat cropped_rgb = rgb(cv::Range(CROP_Y0,CROP_Y1), cv::Range(CROP_X0,CROP_X1));
 
     int img_w = rgb.cols;
     int img_h = rgb.rows;
+//    __android_log_print(ANDROID_LOG_INFO, "Yolox", "CROP_COLS=%d CROP_ROWS=%d", img_w, img_h);
 
     // letterbox pad to multiple of 32
     int w = img_w;
@@ -357,8 +362,9 @@ int Yolox::detect(const cv::Mat& rgb, std::vector<Object>& objects, float prob_t
     // yolov5/utils/datasets.py letterbox
     int wpad = target_size-w;//(w + 31) / 32 * 32 - w;
     int hpad = target_size-h;//(h + 31) / 32 * 32 - h;
+//    __android_log_print(ANDROID_LOG_INFO, "Yolox", "target_size=%d wpad=%d hpad=%d", target_size, wpad, hpad);
     ncnn::Mat in_pad;
-    ncnn::copy_make_border(in, in_pad, 0, hpad, 0, wpad, ncnn::BORDER_CONSTANT, 114.f);
+    ncnn::copy_make_border(in, in_pad, 0, hpad, 0, wpad, ncnn::BORDER_CONSTANT, 114.f); // 114.f
 
     // so for 0-255 input image, rgb_mean should multiply 255 and norm should div by std.
     // new release of yolox has deleted this preprocess,if you are using new release please don't use this preprocess.
@@ -374,7 +380,7 @@ int Yolox::detect(const cv::Mat& rgb, std::vector<Object>& objects, float prob_t
         ncnn::Mat out;
         ex.extract("output", out);
 
-        std::vector<int> strides = {8, 16, 32}; // might have stride=64
+        std::vector<int> strides = {8}; // {8, 16, 32} might have stride=64 FIXME
         std::vector<GridAndStride> grid_strides;
         generate_grids_and_stride(target_size, strides, grid_strides);
         generate_yolox_proposals(grid_strides, out, prob_threshold, proposals);
@@ -387,10 +393,10 @@ int Yolox::detect(const cv::Mat& rgb, std::vector<Object>& objects, float prob_t
     std::vector<int> picked;
     nms_sorted_bboxes(proposals, picked, nms_threshold);
 
-    int count = picked.size();
+    size_t size = picked.size();
 
-    objects.resize(count);
-    for (int i = 0; i < count; i++)
+    objects.resize(size);
+    for (size_t i = 0; i < size; i++)
     {
         objects[i] = proposals[picked[i]];
         if (objects[i].label != TARGET_OBJECT_CLASS_IDX) continue;
@@ -409,8 +415,8 @@ int Yolox::detect(const cv::Mat& rgb, std::vector<Object>& objects, float prob_t
 
         objects[i].rect.x = x0;
         objects[i].rect.y = y0;
-        objects[i].rect.width = x1 - x0;
-        objects[i].rect.height = y1 - y0;
+        objects[i].rect.width = ZOOM * (x1 - x0);
+        objects[i].rect.height = ZOOM * (y1 - y0);
     }
 
     return 0;
@@ -451,8 +457,9 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
         {139, 125,  96}
     };
 
-    static const cv::Scalar cc_black = cv::Scalar(0, 0, 0);
-    static const cv::Scalar cc_white = cv::Scalar(255, 255, 255);
+//    static const cv::Scalar cc_black = cv::Scalar(0, 0, 0);
+//    static const cv::Scalar cc_white = cv::Scalar(255, 255, 255);
+    static const cv::Size zoom_px_size = cv::Size(ZOOM, ZOOM);
 
     int color_index = 0;
     float max_prob = 0.0;
@@ -475,29 +482,78 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
 
         cv::Scalar cc(color[0], color[1], color[2]);
 
-        cv::rectangle(rgb,obj.rect, cc, 4); // 1
+        cv::rectangle(rgb, obj.rect, cc, 4*ZOOM); // 1
 
         // char text[256];
         // sprintf(text, "%s %.0f%%", class_names[obj.label], obj.prob * 100);
 
-        char text[5];
-        sprintf(text, "%.0f%%", obj.prob * 100);
+//        char text[5];
+//        sprintf(text, "%.0f%%", obj.prob * 100);
 
-        int baseLine = 0;
-        cv::Size label_size = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, 2, 2, &baseLine);
+//        int baseLine = 0;
+        int fontScale = 2* ZOOM;
+        int thickness = 2 * ZOOM;
+
+
+//        cv::Size label_size = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, fontScale, thickness, &baseLine);
 
         int x = obj.rect.x;
-        int y = obj.rect.y - label_size.height - baseLine;
-        if (y < 0)
-            y = 0;
-        if (x + label_size.width > rgb.cols)
-            x = rgb.cols - label_size.width;
+        int y = obj.rect.y; // - label_size.height - baseLine;
+//        if (y < 0)
+//            y = 0;
+//        if (x + label_size.width > rgb.cols)
+//            x = rgb.cols - label_size.width;
 
-        cv::rectangle(rgb, cv::Rect(cv::Point(x, y), cv::Size(label_size.width, label_size.height + baseLine)), cc, -1);
+        int wZoom = obj.rect.width;
+        int hZoom = obj.rect.height;
+        int wOrig = wZoom/ZOOM;
+        int hOrig = hZoom/ZOOM;
+        int x2 = x + wOrig;
+        int y2 = y + hOrig;
+        int x2zoom = x + wZoom;
+        int y2zoom = y + hZoom;
 
-        cv::Scalar textcc = (color[0] + color[1] + color[2] >= 381) ? cc_black : cc_white;
+        // clip zoom output to image limits:
+        if (x2zoom >= rgb.cols) {
+            x2zoom = rgb.cols - 1;
+            wZoom = x2zoom - x;
+        }
+        if (y2zoom >= rgb.rows) {
+            y2zoom = rgb.rows - 1;
+            hZoom = y2zoom - y;
+        }
 
-        cv::putText(rgb, text, cv::Point(x, y + label_size.height), cv::FONT_HERSHEY_SIMPLEX, 2, textcc, 2);
+//        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "count=%d, max prob=%.0f%%", color_index, max_prob * 100);
+//        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "x=%d, y=%d, x2=%d, y2=%d, x2z=%d, y2z=%d, cols=%d, rows=%d", x, y, x2, y2, x2zoom, y2zoom, rgb.cols, rgb.rows);
+//        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "orig w=%d, h=%d", wOrig, hOrig);
+
+        cv::Mat sourceArea = rgb(cv::Range(y, y2), cv::Range(x, x2));
+//        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "sourceArea cols=%d, rows=%d", sourceArea.cols, sourceArea.rows);
+
+//        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "zoom w=%d, h=%d", wZoom, hZoom);
+//        cv::Mat editArea = rgb(cv::Range(y, y2zoom), cv::Range(x, x2zoom));
+//        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "editArea cols=%d, rows=%d", editArea.cols, editArea.rows);
+
+        cv::Mat sourceClone = sourceArea.clone();
+        uchar *p = sourceClone.data;
+        for (int row = y, rz = y; row < y2; row++, rz += 2) {
+            for (int col = x, cz = x; col < x2; col++, cz += 2) {
+                uchar r = p[0];
+                uchar g = p[1];
+                uchar b = p[2];
+                cv::Scalar pixelColor(r, g, b);
+                cv::rectangle(rgb, cv::Rect(cv::Point(cz, rz), zoom_px_size), pixelColor, -1);
+                p += 3;
+            }
+        }
+//        cv::addWeighted(editBuffer, 0.0, zoomedObjCv, 1.0, 0.1, editArea, -1);
+//        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "addWeighted() done");
+
+//        cv::rectangle(rgb, cv::Rect(cv::Point(x, y), cv::Size(label_size.width, label_size.height + baseLine)), cc, -1);
+
+//        cv::Scalar textcc = (color[0] + color[1] + color[2] >= 381) ? cc_black : cc_white;
+
+//        cv::putText(rgb, text, cv::Point(x, y + label_size.height), cv::FONT_HERSHEY_SIMPLEX, fontScale, textcc, thickness);
     }
 //    if (color_index > 0) {
 //        __android_log_print(ANDROID_LOG_INFO, "ncnn", "count=%d, max prob=%.0f%%", color_index, max_prob * 100);

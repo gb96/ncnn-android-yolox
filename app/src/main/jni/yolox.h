@@ -46,7 +46,7 @@ private:
     ncnn::Net yolox;
 
     int target_size{};
-    float mean_vals[3]{};
+    float mean_vals[3]{}; // R G B
     float norm_vals[3]{};
     int image_w{};
     int image_h{};

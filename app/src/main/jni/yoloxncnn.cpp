@@ -43,7 +43,7 @@ static int draw_unsupported(cv::Mat& rgb)
     const char text[] = "unsupported";
 
     int baseLine = 0;
-    cv::Size label_size = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, 2.0, 1, &baseLine);
+    cv::Size label_size = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, 2.0, 2, &baseLine);
 
     int y = (rgb.rows - label_size.height) / 2;
     int x = (rgb.cols - label_size.width) / 2;
@@ -130,6 +130,7 @@ void MyNdkCamera::on_image_render(cv::Mat& rgb) const
         if (g_yolox)
         {
             std::vector<Object> objects;
+
             g_yolox->detect(rgb, objects, DETECTION_THRESHOLD, NMS_THRESHOLD);
 
             Yolox::draw(rgb, objects);
@@ -196,7 +197,7 @@ JNIEXPORT jboolean JNICALL Java_com_hypearth_trafficlight_NcnnYolox_loadModel(JN
 
     const int target_sizes[] =
     {
-        416,
+        416, // 416
 //        416,
 //        416,
     };

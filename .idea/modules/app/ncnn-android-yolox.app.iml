@@ -3,7 +3,7 @@
   <component name="FacetManager">
     <facet type="native-android-gradle" name="Native-Android-Gradle">
       <configuration>
-        <option name="SELECTED_ABI" value="arm64-v8a" />
+        <option name="SELECTED_ABI" value="x86" />
         <option name="SELECTED_VARIANT" value="debug" />
       </configuration>
     </facet>
