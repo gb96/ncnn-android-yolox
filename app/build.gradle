@@ -4,15 +4,9 @@ android {
     signingConfigs {
         default_apk {
             storeFile file('C:/Users/gergb/.ssh/gpsAndroidApp.keystore')
-            storePassword 'L0diamond'
-            keyAlias 'hypearth.com'
-            keyPassword 'L0diamond'
         }
         gplay_upload {
             storeFile file('C:/Users/gergb/.ssh/googlePlayUpload.keystore')
-            storePassword 'L0diamond'
-            keyAlias 'upload.hypearth.com'
-            keyPassword 'L0diamond'
         }
     }
     compileSdkVersion 31
