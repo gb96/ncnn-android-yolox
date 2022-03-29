@@ -583,7 +583,7 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
 //                __android_log_print(ANDROID_LOG_ERROR, "ncnn", "AMBER redSum=%d, greenSum=%d, blueSum=%d, redHue=%d, amberHue=%d, greenHue=%d", redSum, greenSum, blueSum, redHueCount, amberHueCount, greenHueCount);
             }
         } else {
-            if (greenHueCount > amberHueCount || greenHueCount > redHueCount) {
+            if (greenHueCount > amberHueCount || greenHueCount > redHueCount || greenSum > blueSum) {
                 // Green light
                 cv::rectangle(rgb, obj.rect, ccGreen, TARGET_OBJECT_BORDER_THICKNESS);
 //                __android_log_print(ANDROID_LOG_ERROR, "ncnn", "GREEN redSum=%d, greenSum=%d, blueSum=%d, redHue=%d, amberHue=%d, greenHue=%d", redSum, greenSum, blueSum, redHueCount, amberHueCount, greenHueCount);
