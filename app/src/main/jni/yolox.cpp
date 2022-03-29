@@ -459,10 +459,14 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
 
 //    static const cv::Scalar cc_black = cv::Scalar(0, 0, 0);
 //    static const cv::Scalar cc_white = cv::Scalar(255, 255, 255);
+    static const cv::Scalar ccRed = cv::Scalar(255, 0, 0);
+    static const cv::Scalar ccGreen = cv::Scalar(0, 255, 0);
     static const cv::Size zoom_px_size = cv::Size(ZOOM, ZOOM);
 
     int color_index = 0;
     float max_prob = 0.0;
+    const cv::Mat rgbClone = rgb.clone();
+
     for (const auto & obj : objects)
     {
         // display at most TARGET_OBJECT_MAX_DETECT_COUNT detected traffic lights,
@@ -477,12 +481,12 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
         if (color_index == 0) {
             max_prob = obj.prob;
         }
-        const unsigned char* color = colors[color_index % 19];
+//        const unsigned char* color = colors[color_index % 19];
         color_index++;
 
-        cv::Scalar cc(color[0], color[1], color[2]);
+//        cv::Scalar cc(color[0], color[1], color[2]);
 
-        cv::rectangle(rgb, obj.rect, cc, 4*ZOOM); // 1
+        // cv::rectangle(rgb, obj.rect, cc, 4*ZOOM); // 1
 
         // char text[256];
         // sprintf(text, "%s %.0f%%", class_names[obj.label], obj.prob * 100);
@@ -527,27 +531,30 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
 //        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "x=%d, y=%d, x2=%d, y2=%d, x2z=%d, y2z=%d, cols=%d, rows=%d", x, y, x2, y2, x2zoom, y2zoom, rgb.cols, rgb.rows);
 //        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "orig w=%d, h=%d", wOrig, hOrig);
 
-        cv::Mat sourceArea = rgb(cv::Range(y, y2), cv::Range(x, x2));
-//        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "sourceArea cols=%d, rows=%d", sourceArea.cols, sourceArea.rows);
-
-//        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "zoom w=%d, h=%d", wZoom, hZoom);
-//        cv::Mat editArea = rgb(cv::Range(y, y2zoom), cv::Range(x, x2zoom));
-//        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "editArea cols=%d, rows=%d", editArea.cols, editArea.rows);
-
-        cv::Mat sourceClone = sourceArea.clone();
-        uchar *p = sourceClone.data;
+        int redSum = 0;
+        int greenSum = 0;
+        int blueSum = 0;
         for (int row = y, rz = y; row < y2; row++, rz += 2) {
+            uchar *p = rgbClone.data + (row * rgb.cols + x) * 3;
             for (int col = x, cz = x; col < x2; col++, cz += 2) {
-                uchar r = p[0];
-                uchar g = p[1];
-                uchar b = p[2];
+                const uchar r = p[0];
+                const uchar g = p[1];
+                const uchar b = p[2];
                 cv::Scalar pixelColor(r, g, b);
+                redSum += r;
+                greenSum += g;
+                blueSum += b;
+
                 cv::rectangle(rgb, cv::Rect(cv::Point(cz, rz), zoom_px_size), pixelColor, -1);
                 p += 3;
             }
         }
-//        cv::addWeighted(editBuffer, 0.0, zoomedObjCv, 1.0, 0.1, editArea, -1);
-//        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "addWeighted() done");
+        if (redSum >= greenSum) {
+            cv::rectangle(rgb, obj.rect, ccRed, 5*ZOOM);
+        } else {
+            cv::rectangle(rgb, obj.rect, ccGreen, 5*ZOOM);
+        }
+//        cv::rectangle(rgb, obj.rect, cc, 5*ZOOM);
 
 //        cv::rectangle(rgb, cv::Rect(cv::Point(x, y), cv::Size(label_size.width, label_size.height + baseLine)), cc, -1);
 
