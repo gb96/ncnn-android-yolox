@@ -30,14 +30,15 @@
 #define CAMERA_CENTER_Y (0.5f * CAMERA_RES_HEIGHT)
 
 // Detections need to have probability above this threshold to make the cut
-#define DETECTION_THRESHOLD 0.01f
+#define DETECTION_THRESHOLD 0.02f
 
-#define NMS_THRESHOLD 0.05f
+#define NMS_THRESHOLD 0.08f
 
 // Only interested in one target object class, this is the class index for that
 #define TARGET_OBJECT_CLASS_IDX 9
 
 // Limit number of simultaneous detections for the target class
-#define TARGET_OBJECT_MAX_DETECT_COUNT 2
+#define TARGET_OBJECT_MAX_DETECT_COUNT 3
 
+#define TARGET_OBJECT_BORDER_THICKNESS (8*ZOOM)
 #endif //NCNN_ANDROID_YOLOX_CV_PARAM_H

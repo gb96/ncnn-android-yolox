@@ -222,7 +222,7 @@ static void generate_yolox_proposals(std::vector<GridAndStride> grid_strides, co
             float box_prob = box_objectness * box_cls_score;
             if (box_prob > prob_threshold)
             {
-                central_bias_x = 1.0f - abs(x_center - CAMERA_CENTER_Y) / CAMERA_RES_HEIGHT;
+                central_bias_x = 1.0f - abs(x_center - CAMERA_CENTER_X) / CAMERA_RES_WIDTH;
                 size_bias = 0.05f * w;
                 Object obj;
                 obj.rect.x = x0;
@@ -330,13 +330,9 @@ int Yolox::load(AAssetManager* mgr, const char* modeltype, int _target_size, con
 int Yolox::detect(const cv::Mat& rgb, std::vector<Object>& objects, float prob_threshold, float nms_threshold)
 {
 //    __android_log_print(ANDROID_LOG_INFO, "Yolox", "detect(rows=%d, cols=%d)", rgb.rows, rgb.cols);
-//    __android_log_print(ANDROID_LOG_INFO, "Yolox", "CROP_FACTOR=%d CROP_W=%d CROP_H=%d", CROP_FACTOR, CROP_W, CROP_H);
-
-//    cv::Mat cropped_rgb = rgb(cv::Range(CROP_Y0,CROP_Y1), cv::Range(CROP_X0,CROP_X1));
 
     int img_w = rgb.cols;
     int img_h = rgb.rows;
-//    __android_log_print(ANDROID_LOG_INFO, "Yolox", "CROP_COLS=%d CROP_ROWS=%d", img_w, img_h);
 
     // letterbox pad to multiple of 32
     int w = img_w;
@@ -435,35 +431,15 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
 //            "68 microwave", "69 oven", "70 toaster", "71 sink", "72 refrigerator", "73 book", "74 clock", "75 vase", "76 scissors", "77 teddy bear",
 //            "78 hair drier", "79 toothbrush"
 //    };
-    static const unsigned char colors[19][3] = {
-        { 54,  67, 244},
-        { 99,  30, 233},
-        {176,  39, 156},
-        {183,  58, 103},
-        {181,  81,  63},
-        {243, 150,  33},
-        {244, 169,   3},
-        {212, 188,   0},
-        {136, 150,   0},
-        { 80, 175,  76},
-        { 74, 195, 139},
-        { 57, 220, 205},
-        { 59, 235, 255},
-        {  7, 193, 255},
-        {  0, 152, 255},
-        { 34,  87, 255},
-        { 72,  85, 121},
-        {158, 158, 158},
-        {139, 125,  96}
-    };
 
-//    static const cv::Scalar cc_black = cv::Scalar(0, 0, 0);
+    static const cv::Scalar ccBlack = cv::Scalar(0, 0, 0);
 //    static const cv::Scalar cc_white = cv::Scalar(255, 255, 255);
     static const cv::Scalar ccRed = cv::Scalar(255, 0, 0);
+    static const cv::Scalar ccOrange = cv::Scalar(255, 165, 0);
     static const cv::Scalar ccGreen = cv::Scalar(0, 255, 0);
     static const cv::Size zoom_px_size = cv::Size(ZOOM, ZOOM);
 
-    int color_index = 0;
+    int detect_count = 0;
     float max_prob = 0.0;
     const cv::Mat rgbClone = rgb.clone();
 
@@ -471,42 +447,21 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
     {
         // display at most TARGET_OBJECT_MAX_DETECT_COUNT detected traffic lights,
         // the most probable detections
-        if (color_index >= TARGET_OBJECT_MAX_DETECT_COUNT) break;
+        if (detect_count >= TARGET_OBJECT_MAX_DETECT_COUNT) break;
 
         // only count and display traffic light detections
         if (obj.label != TARGET_OBJECT_CLASS_IDX) continue;
 
         // track maximum probability, should always be the first object due to sort
         // max_prob = fmax(max_prob, obj.prob);
-        if (color_index == 0) {
+        if (detect_count == 0) {
             max_prob = obj.prob;
         }
-//        const unsigned char* color = colors[color_index % 19];
-        color_index++;
-
-//        cv::Scalar cc(color[0], color[1], color[2]);
-
-        // cv::rectangle(rgb, obj.rect, cc, 4*ZOOM); // 1
-
-        // char text[256];
-        // sprintf(text, "%s %.0f%%", class_names[obj.label], obj.prob * 100);
-
-//        char text[5];
-//        sprintf(text, "%.0f%%", obj.prob * 100);
-
-//        int baseLine = 0;
-        int fontScale = 2* ZOOM;
-        int thickness = 2 * ZOOM;
-
-
-//        cv::Size label_size = cv::getTextSize(text, cv::FONT_HERSHEY_SIMPLEX, fontScale, thickness, &baseLine);
+//        const unsigned char* color = colors[detect_count % 19];
+        detect_count++;
 
         int x = obj.rect.x;
-        int y = obj.rect.y; // - label_size.height - baseLine;
-//        if (y < 0)
-//            y = 0;
-//        if (x + label_size.width > rgb.cols)
-//            x = rgb.cols - label_size.width;
+        int y = obj.rect.y;
 
         int wZoom = obj.rect.width;
         int hZoom = obj.rect.height;
@@ -527,13 +482,17 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
             hZoom = y2zoom - y;
         }
 
-//        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "count=%d, max prob=%.0f%%", color_index, max_prob * 100);
-//        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "x=%d, y=%d, x2=%d, y2=%d, x2z=%d, y2z=%d, cols=%d, rows=%d", x, y, x2, y2, x2zoom, y2zoom, rgb.cols, rgb.rows);
-//        __android_log_print(ANDROID_LOG_ERROR, "ncnn", "orig w=%d, h=%d", wOrig, hOrig);
-
         int redSum = 0;
         int greenSum = 0;
         int blueSum = 0;
+
+        int redHueCount = 0;
+        int amberHueCount = 0;
+        int greenHueCount = 0;
+        int otherHueCount = 0;
+
+        const int doubleWidth = 2 * wOrig;
+
         for (int row = y, rz = y; row < y2; row++, rz += 2) {
             uchar *p = rgbClone.data + (row * rgb.cols + x) * 3;
             for (int col = x, cz = x; col < x2; col++, cz += 2) {
@@ -541,30 +500,99 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
                 const uchar g = p[1];
                 const uchar b = p[2];
                 cv::Scalar pixelColor(r, g, b);
-                redSum += r;
-                greenSum += g;
-                blueSum += b;
+
+                const int testCol1 = 3 * (col - x);
+                if (testCol1 > wOrig && testCol1 < 2 * doubleWidth) {
+                    // Sample pixel colour in centre third of pixel columns
+                    redSum += r;
+                    greenSum += g;
+                    blueSum += b;
+
+                    // Hue calculation from RGB:
+                    int h = 0;
+                    if (r != g || b != g) {
+                        int v = r;  // max(r, g, b)
+                        if (g > v) v = g;
+                        if (b > v) v = b;
+                        int w = r;  // min(r, g, b)
+                        if (g < w) w = g;
+                        if (b < w) w = b;
+
+                        if (v == r) {
+                            int gi = g;
+                            int bi = b;
+                            h = 60 * (gi - bi) / (v - w);
+                        } else if (v == g) {
+                            int bi = b;
+                            int ri = r;
+                            h = 120 + 60 * (bi - ri) / (v - w);
+                        } else {
+                            // v == b
+                            int ri = r;
+                            int gi = g;
+                            h = 240 + 60 * (ri - gi) / (v - w);
+                        }
+                        if (h < 0) h += 360;
+                    }
+
+                    if (h >= 340 && h <= 352) {
+                        // Cool Red
+                        redHueCount++;
+                    } else if (h >= 353 || h <= 7) {
+                        // Mid Red
+                        redHueCount += 2;
+                    } else if (h >= 8 && h <= 22) {
+                        // Warm Red
+                        redHueCount++;
+                    } else if (h >= 23 && h <= 37) {
+                        // Orange
+                        amberHueCount += 2;
+                    } else if (h >= 38 && h <= 50) {
+                        // Warm yellow
+                        amberHueCount++;
+                    } else if (h >= 83 && h <= 97) {
+                        // Yellow green
+                        greenHueCount++;
+                    } else if (h >= 98 && h <= 112) {
+                        // Warm green
+                        greenHueCount++;
+                    } else if (h >= 113 && h <= 127) {
+                        // Mid green
+                        greenHueCount += 2;
+                    } else if (h >= 128 && h <= 140) {
+                        // Cool green
+                        greenHueCount++;
+                    } else {
+                        // Other hue
+                        otherHueCount++;
+                    }
+                }
 
                 cv::rectangle(rgb, cv::Rect(cv::Point(cz, rz), zoom_px_size), pixelColor, -1);
                 p += 3;
             }
         }
         if (redSum >= greenSum) {
-            cv::rectangle(rgb, obj.rect, ccRed, 5*ZOOM);
+            if (redHueCount > amberHueCount) {
+                // Red light
+                cv::rectangle(rgb, obj.rect, ccRed, TARGET_OBJECT_BORDER_THICKNESS);
+//                __android_log_print(ANDROID_LOG_ERROR, "ncnn", "RED   redSum=%d, greenSum=%d, blueSum=%d, redHue=%d, amberHue=%d, greenHue=%d", redSum, greenSum, blueSum, redHueCount, amberHueCount, greenHueCount);
+            } else {
+                // Amber light
+                cv::rectangle(rgb, obj.rect, ccOrange, TARGET_OBJECT_BORDER_THICKNESS);
+//                __android_log_print(ANDROID_LOG_ERROR, "ncnn", "AMBER redSum=%d, greenSum=%d, blueSum=%d, redHue=%d, amberHue=%d, greenHue=%d", redSum, greenSum, blueSum, redHueCount, amberHueCount, greenHueCount);
+            }
         } else {
-            cv::rectangle(rgb, obj.rect, ccGreen, 5*ZOOM);
+            if (greenHueCount > amberHueCount || greenHueCount > redHueCount) {
+                // Green light
+                cv::rectangle(rgb, obj.rect, ccGreen, TARGET_OBJECT_BORDER_THICKNESS);
+//                __android_log_print(ANDROID_LOG_ERROR, "ncnn", "GREEN redSum=%d, greenSum=%d, blueSum=%d, redHue=%d, amberHue=%d, greenHue=%d", redSum, greenSum, blueSum, redHueCount, amberHueCount, greenHueCount);
+            } else {
+                // No Red/Amber/Green?
+                cv::rectangle(rgb, obj.rect, ccBlack, TARGET_OBJECT_BORDER_THICKNESS);
+//                __android_log_print(ANDROID_LOG_ERROR, "ncnn", "BLACK redSum=%d, greenSum=%d, blueSum=%d, redHue=%d, amberHue=%d, greenHue=%d", redSum, greenSum, blueSum, redHueCount, amberHueCount, greenHueCount);
+            }
         }
-//        cv::rectangle(rgb, obj.rect, cc, 5*ZOOM);
-
-//        cv::rectangle(rgb, cv::Rect(cv::Point(x, y), cv::Size(label_size.width, label_size.height + baseLine)), cc, -1);
-
-//        cv::Scalar textcc = (color[0] + color[1] + color[2] >= 381) ? cc_black : cc_white;
-
-//        cv::putText(rgb, text, cv::Point(x, y + label_size.height), cv::FONT_HERSHEY_SIMPLEX, fontScale, textcc, thickness);
     }
-//    if (color_index > 0) {
-//        __android_log_print(ANDROID_LOG_INFO, "ncnn", "count=%d, max prob=%.0f%%", color_index, max_prob * 100);
-//    }
-
     return 0;
 }
