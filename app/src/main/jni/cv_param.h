@@ -30,15 +30,17 @@
 #define CAMERA_CENTER_Y (0.5f * CAMERA_RES_HEIGHT)
 
 // Detections need to have probability above this threshold to make the cut
-#define DETECTION_THRESHOLD 0.02f
+#define DETECTION_THRESHOLD 0.04f
 
-#define NMS_THRESHOLD 0.08f
+// Overlapping detections with overlap greater than this IoU ratio result in
+// the lower scoring of the overlapping detections to be discarded
+#define NMS_THRESHOLD 0.5f
 
 // Only interested in one target object class, this is the class index for that
 #define TARGET_OBJECT_CLASS_IDX 9
 
 // Limit number of simultaneous detections for the target class
-#define TARGET_OBJECT_MAX_DETECT_COUNT 3
+#define TARGET_OBJECT_MAX_DETECT_COUNT 8
 
-#define TARGET_OBJECT_BORDER_THICKNESS (8*ZOOM)
+#define TARGET_OBJECT_BORDER_THICKNESS (9*ZOOM)
 #endif //NCNN_ANDROID_YOLOX_CV_PARAM_H

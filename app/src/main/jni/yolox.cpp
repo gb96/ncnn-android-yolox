@@ -132,9 +132,15 @@ static void qsort_descent_inplace(std::vector<Object>& objects)
 
 static void nms_sorted_bboxes(const std::vector<Object>& detectedobjs, std::vector<int>& picked, float nms_threshold)
 {
-    picked.clear();
+    float min_nms = 1.0;
+    float max_nms = 0.0;
+    float sum_nms = 0.0;
+    int nms_count = 0;
+    int discard_count = 0;
 
     const int n = detectedobjs.size();
+
+    picked.clear();
 
     std::vector<float> areas(n);
     for (int i = 0; i < n; i++)
@@ -154,14 +160,26 @@ static void nms_sorted_bboxes(const std::vector<Object>& detectedobjs, std::vect
             // intersection over union
             float inter_area = intersection_area(a, b);
             float union_area = areas[i] + areas[j] - inter_area;
-            // float IoU = inter_area / union_area
-            if (inter_area / union_area > nms_threshold)
+            float IoU = inter_area / union_area;  //  range is 0 .. 1
+            max_nms = std::max(max_nms, IoU);
+            min_nms = std::min(min_nms, IoU);
+            sum_nms += IoU;
+            nms_count++;
+            if (IoU > nms_threshold) {
+                // discard additional detections that overlap existing higher-probability ones
                 keep = 0;
+                discard_count++;
+            }
         }
 
         if (keep)
             picked.push_back(i);
     }
+//    if (nms_count != 0) {
+//        float avg_nms = sum_nms/nms_count;
+//        __android_log_print(ANDROID_LOG_INFO, "yolox", "nms_sorted_bboxes picked=%d/%d discarded=%d max_nms=%.2f min_nms=%.2f avg_nms=%.2f", picked.size(), n, discard_count, max_nms, min_nms, avg_nms);
+//    }
+
 }
 
 static int generate_grids_and_stride(const int target_size, std::vector<int>& strides, std::vector<GridAndStride>& grid_strides)
@@ -222,8 +240,8 @@ static void generate_yolox_proposals(std::vector<GridAndStride> grid_strides, co
             float box_prob = box_objectness * box_cls_score;
             if (box_prob > prob_threshold)
             {
-                central_bias_x = 1.0f - abs(x_center - CAMERA_CENTER_X) / CAMERA_RES_WIDTH;
-                size_bias = 0.05f * w;
+                central_bias_x = 1.2f - abs(x_center - CAMERA_CENTER_X) / CAMERA_RES_WIDTH;
+                size_bias = 0.07f * w;
                 Object obj;
                 obj.rect.x = x0;
                 obj.rect.y = y0;
@@ -330,7 +348,6 @@ int Yolox::load(AAssetManager* mgr, const char* modeltype, int _target_size, con
 int Yolox::detect(const cv::Mat& rgb, std::vector<Object>& objects, float prob_threshold, float nms_threshold)
 {
 //    __android_log_print(ANDROID_LOG_INFO, "Yolox", "detect(rows=%d, cols=%d)", rgb.rows, rgb.cols);
-
     int img_w = rgb.cols;
     int img_h = rgb.rows;
 
@@ -440,7 +457,10 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
     static const cv::Size zoom_px_size = cv::Size(ZOOM, ZOOM);
 
     int detect_count = 0;
+    float min_prob = 1.0;
     float max_prob = 0.0;
+    float sum_prob = 0.0;
+
     const cv::Mat rgbClone = rgb.clone();
 
     for (const auto & obj : objects)
@@ -452,11 +472,11 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
         // only count and display traffic light detections
         if (obj.label != TARGET_OBJECT_CLASS_IDX) continue;
 
-        // track maximum probability, should always be the first object due to sort
-        // max_prob = fmax(max_prob, obj.prob);
-        if (detect_count == 0) {
-            max_prob = obj.prob;
-        }
+        // track maximum probability, will typically be the first object due to sort
+        max_prob = std::max(obj.prob, max_prob);
+        min_prob = std::min(obj.prob, min_prob);
+        sum_prob += obj.prob;
+
 //        const unsigned char* color = colors[detect_count % 19];
         detect_count++;
 
@@ -594,5 +614,11 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
             }
         }
     }
+
+//    if (detect_count != 0) {
+//        float avg_prob = sum_prob/detect_count;
+//        __android_log_print(ANDROID_LOG_INFO, "yolox", "draw n=%d max_prob=%.2f min_prob=%.2f avg_prob=%.2f", detect_count, max_prob, min_prob, avg_prob);
+//    }
+
     return 0;
 }
