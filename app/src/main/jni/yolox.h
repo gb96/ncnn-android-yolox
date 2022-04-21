@@ -24,7 +24,6 @@ struct Object
     cv::Rect_<float> rect;
     int label;
     float prob;
-   
 };
 
 
@@ -52,6 +51,7 @@ private:
     int image_h{};
     int in_w{};
     int in_h{};
+    int frame_num{};
 
     ncnn::UnlockedPoolAllocator blob_pool_allocator;
     ncnn::PoolAllocator workspace_pool_allocator;

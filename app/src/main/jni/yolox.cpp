@@ -16,10 +16,18 @@
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/imgcodecs.hpp>
 
 #include "cpu.h"
 #include "cv_param.h"
 
+
+static const cv::Scalar ccBlack = cv::Scalar(0, 0, 0);
+static const cv::Scalar ccWhite = cv::Scalar(255, 255, 255);
+static const cv::Scalar ccRed = cv::Scalar(255, 0, 0);
+static const cv::Scalar ccOrange = cv::Scalar(255, 165, 0);
+static const cv::Scalar ccGreen = cv::Scalar(0, 255, 0);
+static const cv::Size zoom_px_size = cv::Size(ZOOM, ZOOM);
 
 
 // YOLOX use the same focus in yolov5
@@ -201,10 +209,10 @@ static int generate_grids_and_stride(const int target_size, std::vector<int>& st
 
 static void generate_yolox_proposals(std::vector<GridAndStride> grid_strides, const ncnn::Mat& feat_blob, float prob_threshold, std::vector<Object>& objects)
 {
-    const int num_grid = feat_blob.h;
+//    const int num_grid = feat_blob.h;
     // fprintf(stderr, "output height: %d, width: %d, channels: %d, dims:%d\n", feat_blob.h, feat_blob.w, feat_blob.c, feat_blob.dims);
 
-    const int num_class = feat_blob.w - 5;
+//    const int num_class = feat_blob.w - 5;
 
     const int num_anchors = grid_strides.size();
 
@@ -303,6 +311,8 @@ int Yolox::load(const char* modeltype, int _target_size, const float* _mean_vals
     norm_vals[1] = _norm_vals[1];
     norm_vals[2] = _norm_vals[2];
 
+    frame_num = 0;
+
     return 0;
 }
 
@@ -341,6 +351,8 @@ int Yolox::load(AAssetManager* mgr, const char* modeltype, int _target_size, con
     norm_vals[1] = _norm_vals[1];
     norm_vals[2] = _norm_vals[2];
 
+    frame_num = 0;
+
     return 0;
 }
 
@@ -367,9 +379,43 @@ int Yolox::detect(const cv::Mat& rgb, std::vector<Object>& objects, float prob_t
         h = target_size;
         w = w * scale;
     }
-
     ncnn::Mat in = ncnn::Mat::from_pixels_resize(rgb.data, ncnn::Mat::PIXEL_RGB, img_w, img_h, w, h);
     // ncnn::Mat in = ncnn::Mat::from_pixels_resize(rgb.data, ncnn::Mat::PIXEL_RGB2BGR, img_w, img_h, w, h);
+
+    int kernel_size = 3;
+//    int ddepth = CV_16S;
+
+    cv::Mat laplacian;
+    cv::Mat src_grey;
+    // Reduce noise by blurring with a Gaussian filter ( kernel size = 3 )
+
+//    cv::GaussianBlur(rgb, rgb, cv::Size(kernel_size, kernel_size), 0, 0 );
+    cvtColor(rgb, src_grey, cv::COLOR_BGR2GRAY); // Convert the image to grayscale
+    medianBlur(src_grey, src_grey, 5);
+    std::vector<cv::Vec3f> circles;
+    HoughCircles(src_grey, circles, cv::HOUGH_GRADIENT, 1,
+                 src_grey.rows/16,  // change this value to detect circles with different distances to each other
+                 100, 30, 1, 30 // change the last two parameters
+            // (min_radius & max_radius) to detect larger circles
+    );
+    for ( auto c : circles ) {
+        cv::Point center = cv::Point(c[0], c[1]);
+        // circle center
+        circle( rgb, center, 1, ccBlack, 3, cv::LINE_AA);
+        // circle outline
+        int radius = c[2];
+        circle( rgb, center, radius, ccWhite, 3, cv::LINE_AA);
+    }
+
+//    Laplacian(src_grey, laplacian, ddepth, kernel_size);
+
+    if (frame_num % 32 == 0) {
+        // save image
+        char filepath[128];
+        sprintf(filepath, "/sdcard/Pictures/rgb_%d.jpg", frame_num/32);
+        bool result = cv::imwrite(filepath, rgb);
+//        __android_log_print(ANDROID_LOG_INFO, "yolox", "imwrite frame_num=%d result=%d", frame_num, result);
+    }
 
     // pad to target_size rectangle
     // yolov5/utils/datasets.py letterbox
@@ -432,6 +478,8 @@ int Yolox::detect(const cv::Mat& rgb, std::vector<Object>& objects, float prob_t
         objects[i].rect.height = ZOOM * (y1 - y0);
     }
 
+    frame_num++;
+
     return 0;
 }
 
@@ -448,13 +496,6 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
 //            "68 microwave", "69 oven", "70 toaster", "71 sink", "72 refrigerator", "73 book", "74 clock", "75 vase", "76 scissors", "77 teddy bear",
 //            "78 hair drier", "79 toothbrush"
 //    };
-
-    static const cv::Scalar ccBlack = cv::Scalar(0, 0, 0);
-//    static const cv::Scalar cc_white = cv::Scalar(255, 255, 255);
-    static const cv::Scalar ccRed = cv::Scalar(255, 0, 0);
-    static const cv::Scalar ccOrange = cv::Scalar(255, 165, 0);
-    static const cv::Scalar ccGreen = cv::Scalar(0, 255, 0);
-    static const cv::Size zoom_px_size = cv::Size(ZOOM, ZOOM);
 
     int detect_count = 0;
     float min_prob = 1.0;
