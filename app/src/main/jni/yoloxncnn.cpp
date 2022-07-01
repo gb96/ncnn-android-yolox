@@ -119,7 +119,7 @@ class MyNdkCamera : public NdkCameraWindow
 public:
     MyNdkCamera(int camera_res_width, int camera_res_height);
 
-    virtual void on_image_render(cv::Mat& rgb) const;
+    void on_image_render(cv::Mat& rgb) const override;
 };
 
 void MyNdkCamera::on_image_render(cv::Mat& rgb) const
@@ -133,7 +133,7 @@ void MyNdkCamera::on_image_render(cv::Mat& rgb) const
 
             g_yolox->detect(rgb, objects, DETECTION_THRESHOLD, NMS_THRESHOLD);
 
-            Yolox::draw(rgb, objects);
+            g_yolox->draw(rgb, objects);
         }
         else
         {

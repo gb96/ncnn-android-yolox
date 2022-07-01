@@ -379,43 +379,35 @@ int Yolox::detect(const cv::Mat& rgb, std::vector<Object>& objects, float prob_t
         h = target_size;
         w = w * scale;
     }
-    ncnn::Mat in = ncnn::Mat::from_pixels_resize(rgb.data, ncnn::Mat::PIXEL_RGB, img_w, img_h, w, h);
-    // ncnn::Mat in = ncnn::Mat::from_pixels_resize(rgb.data, ncnn::Mat::PIXEL_RGB2BGR, img_w, img_h, w, h);
+     ncnn::Mat inRgb = ncnn::Mat::from_pixels_resize(rgb.data, ncnn::Mat::PIXEL_RGB, img_w, img_h, w, h);
+//    ncnn::Mat inBgr = ncnn::Mat::from_pixels_resize(rgb.data, ncnn::Mat::PIXEL_RGB2BGR, img_w, img_h, w, h);
 
     int kernel_size = 3;
 //    int ddepth = CV_16S;
 
-    cv::Mat laplacian;
+//    cv::Mat laplacian;
     cv::Mat src_grey;
-    // Reduce noise by blurring with a Gaussian filter ( kernel size = 3 )
+    // Reduce noise by blurring with a Gaussian filter ( kernel size = 5 )
 
 //    cv::GaussianBlur(rgb, rgb, cv::Size(kernel_size, kernel_size), 0, 0 );
     cvtColor(rgb, src_grey, cv::COLOR_BGR2GRAY); // Convert the image to grayscale
     medianBlur(src_grey, src_grey, 5);
-    std::vector<cv::Vec3f> circles;
-    HoughCircles(src_grey, circles, cv::HOUGH_GRADIENT, 1,
-                 src_grey.rows/16,  // change this value to detect circles with different distances to each other
-                 100, 30, 1, 30 // change the last two parameters
-            // (min_radius & max_radius) to detect larger circles
-    );
-    for ( auto c : circles ) {
-        cv::Point center = cv::Point(c[0], c[1]);
-        // circle center
-        circle( rgb, center, 1, ccBlack, 3, cv::LINE_AA);
-        // circle outline
-        int radius = c[2];
-        circle( rgb, center, radius, ccWhite, 3, cv::LINE_AA);
-    }
+//    std::vector<cv::Vec3f> circles;
+//    HoughCircles(src_grey, circles, cv::HOUGH_GRADIENT, 1,
+//                 src_grey.rows/16,  // change this value to detect circles with different distances to each other
+//                 100, 30, 2, 30 // change the last two parameters
+//            // (min_radius & max_radius) to detect larger circles
+//    );
+//    for ( auto c : circles ) {
+//        cv::Point center = cv::Point(c[0], c[1]);
+//        // circle center
+//        // circle( rgb, center, 1, ccBlack, 3, cv::LINE_AA);
+//        // circle outline
+//        int radius = c[2];
+//        circle( rgb, center, radius, ccWhite, 2, cv::LINE_AA);
+//    }
 
 //    Laplacian(src_grey, laplacian, ddepth, kernel_size);
-
-    if (frame_num % 32 == 0) {
-        // save image
-        char filepath[128];
-        sprintf(filepath, "/sdcard/Pictures/rgb_%d.jpg", frame_num/32);
-        bool result = cv::imwrite(filepath, rgb);
-//        __android_log_print(ANDROID_LOG_INFO, "yolox", "imwrite frame_num=%d result=%d", frame_num, result);
-    }
 
     // pad to target_size rectangle
     // yolov5/utils/datasets.py letterbox
@@ -423,7 +415,7 @@ int Yolox::detect(const cv::Mat& rgb, std::vector<Object>& objects, float prob_t
     int hpad = target_size-h;//(h + 31) / 32 * 32 - h;
 //    __android_log_print(ANDROID_LOG_INFO, "Yolox", "target_size=%d wpad=%d hpad=%d", target_size, wpad, hpad);
     ncnn::Mat in_pad;
-    ncnn::copy_make_border(in, in_pad, 0, hpad, 0, wpad, ncnn::BORDER_CONSTANT, 114.f); // 114.f
+    ncnn::copy_make_border(inRgb, in_pad, 0, hpad, 0, wpad, ncnn::BORDER_CONSTANT, 114.f); // 114.f
 
     // so for 0-255 input image, rgb_mean should multiply 255 and norm should div by std.
     // new release of yolox has deleted this preprocess,if you are using new release please don't use this preprocess.
@@ -455,10 +447,13 @@ int Yolox::detect(const cv::Mat& rgb, std::vector<Object>& objects, float prob_t
     size_t size = picked.size();
 
     objects.resize(size);
+    int detCount = 0;
     for (size_t i = 0; i < size; i++)
     {
         objects[i] = proposals[picked[i]];
         if (objects[i].label != TARGET_OBJECT_CLASS_IDX) continue;
+
+        detCount++;
 
         // adjust offset to original unpadded
         float x0 = (objects[i].rect.x) / scale;
@@ -474,10 +469,37 @@ int Yolox::detect(const cv::Mat& rgb, std::vector<Object>& objects, float prob_t
 
         objects[i].rect.x = x0;
         objects[i].rect.y = y0;
+        int _w = std::round(objects[i].rect.width);
+        int _h = std::round(objects[i].rect.height);
         objects[i].rect.width = ZOOM * (x1 - x0);
         objects[i].rect.height = ZOOM * (y1 - y0);
+
+        cv::Mat src_grey_aoi = src_grey.colRange(x0, x0 + _w).rowRange(y0, y0 + _h);
+        std::vector<cv::Vec3f> circles;
+        HoughCircles(src_grey_aoi, circles, cv::HOUGH_GRADIENT, 1,
+                     5,  // change this value to detect circles with different distances to each other
+                     200, 90, 3, 0 // change the last two parameters
+                // (min_radius & max_radius) to detect larger circles
+        );
+        for ( auto c : circles ) {
+            cv::Point center = cv::Point(c[0], c[1]);
+            // circle center
+            // circle( rgb, center, 1, ccBlack, 3, cv::LINE_AA);
+            // circle outline
+            int radius = c[2];
+            circle( rgb, center, radius, ccWhite, 3, cv::LINE_AA);
+        }
     }
 
+//    if (detCount != 0) {
+//        // save image
+//        char filepath[128];
+//        sprintf(filepath, "/sdcard/Pictures/rgb_%d.jpg", frame_num);
+//        cv::Mat bgr;
+//        cvtColor(rgb, bgr, cv::COLOR_RGB2BGR); // Convert the RGB image to BGR
+//        bool result = cv::imwrite(filepath, bgr);
+////        __android_log_print(ANDROID_LOG_INFO, "yolox", "imwrite frame_num=%d result=%d", frame_num, result);
+//    }
     frame_num++;
 
     return 0;
@@ -656,10 +678,19 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
         }
     }
 
-//    if (detect_count != 0) {
+    if (detect_count != 0) {
 //        float avg_prob = sum_prob/detect_count;
 //        __android_log_print(ANDROID_LOG_INFO, "yolox", "draw n=%d max_prob=%.2f min_prob=%.2f avg_prob=%.2f", detect_count, max_prob, min_prob, avg_prob);
-//    }
+
+        // save image
+        char filepath[128];
+        sprintf(filepath, "/sdcard/Pictures/Lights/rgb_%d_det.jpg", frame_num);
+        cv::Mat bgr;
+        cvtColor(rgb, bgr, cv::COLOR_RGB2BGR); // Convert the RGB image to BGR
+        bool result = cv::imwrite(filepath, bgr);
+//        __android_log_print(ANDROID_LOG_INFO, "yolox", "imwrite frame_num=%d result=%d", frame_num, result);
+
+    }
 
     return 0;
 }

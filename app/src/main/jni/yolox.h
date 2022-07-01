@@ -38,7 +38,7 @@ public:
 
     int detect(const cv::Mat& rgb, std::vector<Object>& objects, float prob_threshold = 0.3f, float nms_threshold = 0.45f);
 
-    static int draw(cv::Mat& rgb, const std::vector<Object>& objects);
+    int draw(cv::Mat& rgb, const std::vector<Object>& objects);
 
 private:
 
