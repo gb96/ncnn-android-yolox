@@ -14,6 +14,10 @@
 
 #include "yolox.h"
 
+#include <iostream>
+#include <string>
+#include <fstream>
+
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -469,26 +473,26 @@ int Yolox::detect(const cv::Mat& rgb, std::vector<Object>& objects, float prob_t
 
         objects[i].rect.x = x0;
         objects[i].rect.y = y0;
-        int _w = std::round(objects[i].rect.width);
-        int _h = std::round(objects[i].rect.height);
+//        int _w = std::round(objects[i].rect.width);
+//        int _h = std::round(objects[i].rect.height);
         objects[i].rect.width = ZOOM * (x1 - x0);
         objects[i].rect.height = ZOOM * (y1 - y0);
 
-        cv::Mat src_grey_aoi = src_grey.colRange(x0, x0 + _w).rowRange(y0, y0 + _h);
-        std::vector<cv::Vec3f> circles;
-        HoughCircles(src_grey_aoi, circles, cv::HOUGH_GRADIENT, 1,
-                     5,  // change this value to detect circles with different distances to each other
-                     200, 90, 3, 0 // change the last two parameters
-                // (min_radius & max_radius) to detect larger circles
-        );
-        for ( auto c : circles ) {
-            cv::Point center = cv::Point(c[0], c[1]);
-            // circle center
-            // circle( rgb, center, 1, ccBlack, 3, cv::LINE_AA);
-            // circle outline
-            int radius = c[2];
-            circle( rgb, center, radius, ccWhite, 3, cv::LINE_AA);
-        }
+//        cv::Mat src_grey_aoi = src_grey.colRange(x0, x0 + _w).rowRange(y0, y0 + _h);
+//        std::vector<cv::Vec3f> circles;
+//        HoughCircles(src_grey_aoi, circles, cv::HOUGH_GRADIENT, 1,
+//                     5,  // change this value to detect circles with different distances to each other
+//                     200, 90, 3, 0 // change the last two parameters
+//                // (min_radius & max_radius) to detect larger circles
+//        );
+//        for ( auto c : circles ) {
+//            cv::Point center = cv::Point(c[0], c[1]);
+//            // circle center
+//            // circle( rgb, center, 1, ccBlack, 3, cv::LINE_AA);
+//            // circle outline
+//            int radius = c[2];
+//            circle( rgb, center, radius, ccWhite, 3, cv::LINE_AA);
+//        }
     }
 
 //    if (detCount != 0) {
@@ -525,6 +529,7 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
     float sum_prob = 0.0;
 
     const cv::Mat rgbClone = rgb.clone();
+    char* detect_info[TARGET_OBJECT_MAX_DETECT_COUNT];
 
     for (const auto & obj : objects)
     {
@@ -618,32 +623,20 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
                         if (h < 0) h += 360;
                     }
 
-                    if (h >= 340 && h <= 352) {
-                        // Cool Red
-                        redHueCount++;
-                    } else if (h >= 353 || h <= 7) {
-                        // Mid Red
+                    if (h >= 359 || h <= 10) {
+                        // Traffic Light Red
                         redHueCount += 2;
-                    } else if (h >= 8 && h <= 22) {
-                        // Warm Red
+                    } else if (h >= 358 || h <= 26) {
+                        // off-Traffic Light Red
                         redHueCount++;
-                    } else if (h >= 23 && h <= 37) {
-                        // Orange
-                        amberHueCount += 2;
-                    } else if (h >= 38 && h <= 50) {
+                    } else if (h >= 55 && h <= 61) {
                         // Warm yellow
-                        amberHueCount++;
-                    } else if (h >= 83 && h <= 97) {
-                        // Yellow green
-                        greenHueCount++;
-                    } else if (h >= 98 && h <= 112) {
-                        // Warm green
-                        greenHueCount++;
-                    } else if (h >= 113 && h <= 127) {
-                        // Mid green
-                        greenHueCount += 2;
-                    } else if (h >= 128 && h <= 140) {
-                        // Cool green
+                        amberHueCount+=2;
+                    } else if (h >= 176 && h <= 180) {
+                        // Traffic light cyan green
+                        greenHueCount+=2;
+                    } else if (h >= 170 && h <= 182) {
+                        // Cyan green
                         greenHueCount++;
                     } else {
                         // Other hue
@@ -676,6 +669,9 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
 //                __android_log_print(ANDROID_LOG_ERROR, "ncnn", "BLACK redSum=%d, greenSum=%d, blueSum=%d, redHue=%d, amberHue=%d, greenHue=%d", redSum, greenSum, blueSum, redHueCount, amberHueCount, greenHueCount);
             }
         }
+        detect_info[detect_count - 1] = new char[128];
+        sprintf(detect_info[detect_count - 1], "prob: %f, redSum: %d, greenSum: %d, blueSum %d, redHue: %d, amberHue: %d, greenHue: %d",
+                obj.prob, redSum, greenSum, blueSum, redHueCount, amberHueCount, greenHueCount);
     }
 
     if (detect_count != 0) {
@@ -688,6 +684,24 @@ int Yolox::draw(cv::Mat& rgb, const std::vector<Object>& objects)
         cv::Mat bgr;
         cvtColor(rgb, bgr, cv::COLOR_RGB2BGR); // Convert the RGB image to BGR
         bool result = cv::imwrite(filepath, bgr);
+        // metadata = pyexiv2.ImageMetadata(filepath)
+        // metadata.write()
+        sprintf(filepath, "/sdcard/Pictures/Lights/rgb_%d_det.txt", frame_num);
+        std::ofstream fw(filepath, std::ofstream::out);
+        if (fw.is_open()) {
+            fw << "frame: \t" << frame_num << "\n";
+            fw << "detect_count: \t" << detect_count << "\n";
+            fw << "max_prob: \t" << max_prob << "\n";
+            fw << "min_prob: \t" << min_prob << "\n";
+            fw << "avg_prob: \t" << (sum_prob / (float)detect_count) << "\n";
+            for (int i = 0; i < detect_count; i++) {
+                // Dump extra info about each detection
+                fw << (i + 1) << ": " << detect_info[i] << "\n";
+            }
+
+        }
+        fw.close();
+
 //        __android_log_print(ANDROID_LOG_INFO, "yolox", "imwrite frame_num=%d result=%d", frame_num, result);
 
     }
